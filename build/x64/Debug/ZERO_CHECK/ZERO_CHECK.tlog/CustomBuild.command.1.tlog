@@ -1,0 +1,10 @@
+^C:\USERS\CARLO\DOCUMENTS\BACKUP\MIGRAR\U\2025-10\CVI\MIPROYECTOFRACTAL\BUILD\CMAKEFILES\612E5FBC2CB3E3F69F34259F870AA616\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal -BC:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/MiProyectoFractal.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
