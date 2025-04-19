@@ -1,3 +1,4 @@
 C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/CMakeFiles/MiProyectoFractal.dir
+C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/CMakeFiles/CopyShaders.dir
 C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/CMakeFiles/ALL_BUILD.dir
 C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/CMakeFiles/ZERO_CHECK.dir

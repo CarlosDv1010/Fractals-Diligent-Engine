@@ -13,11 +13,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Agrega tu carpeta src
 file(GLOB_RECURSE SRC_FILES "src/*.cpp" "src/*.hpp")
 
+file(GLOB_RECURSE SHADER_FILES
+    "${CMAKE_SOURCE_DIR}/src/Shaders/*.vsh"
+    "${CMAKE_SOURCE_DIR}/src/Shaders/*.psh"
+)
+
 list(APPEND SRC_FILES
     src/CreateSample.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
+
+target_sources(${PROJECT_NAME} PRIVATE ${SHADER_FILES})
+
+source_group(
+    TREE "${CMAKE_SOURCE_DIR}/src/Shaders"
+    PREFIX "Shaders"
+    FILES ${SHADER_FILES}
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE YES
@@ -35,6 +52,28 @@ if(WIN32)
         WIN32_EXECUTABLE TRUE
     )
 endif()
+
+set(SHADERS_DEST_DIR "${CMAKE_BINARY_DIR}/Shaders")
+
+
+add_custom_target(CopyShaders ALL
+    COMMENT "Copying shader files to output directory"
+)
+
+foreach(_SHADER_FILE IN LISTS SHADER_FILES)
+    get_filename_component(_SHADER_NAME ${_SHADER_FILE} NAME)
+
+    add_custom_command(
+        TARGET CopyShaders PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADERS_DEST_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_SHADER_FILE}"
+                "${SHADERS_DEST_DIR}/${_SHADER_NAME}"
+        COMMENT "Copying shader ${_SHADER_NAME}"
+    )
+endforeach()
+
+
 
 # Incluye los headers de Diligent
 target_include_directories(${PROJECT_NAME} PRIVATE

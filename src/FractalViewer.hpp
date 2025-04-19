@@ -1,9 +1,24 @@
+// FractalViewer.hpp
 #pragma once
 
+#include <atomic>
+#include <vector>
+#include <thread>
+#include <mutex>
 #include "SampleBase.hpp"
+#include "BasicMath.hpp"
+#include "ThreadSignal.hpp"
+#include "MapHelper.hpp"
+#include "float.h"
 
 namespace Diligent
 {
+
+    struct Vertex
+    {
+        float3 Pos;
+        float2 UV;
+    };
 
     class FractalViewer final : public SampleBase
     {
@@ -15,7 +30,8 @@ namespace Diligent
         const Char* GetSampleName() const override final { return "Fractal Viewer"; }
 
     private:
-        // Aquí luego podrás declarar tu PSO, constantes, buffers, etc.
+        // Pipeline state and resources
+        RefCntAutoPtr<IPipelineState>      m_pPSO;
     };
 
 } // namespace Diligent

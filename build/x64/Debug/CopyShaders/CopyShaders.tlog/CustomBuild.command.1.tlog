@@ -1,0 +1,10 @@
+^C:\USERS\CARLO\DOCUMENTS\BACKUP\MIGRAR\U\2025-10\CVI\MIPROYECTOFRACTAL\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal -BC:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build --check-stamp-file C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -4,12 +4,12 @@
     <ClCompile Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\CreateSample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\FractalViewer.cpp">
+    <ClCompile Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\FractalViewer.hpp">
+    <ClInclude Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -17,8 +17,19 @@
     <CustomBuild Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\fractal.psh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\quad.vsh">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{2C4CA87B-46F6-317F-BA91-32163FF5AE54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{889E4FC2-0435-3898-9A2C-0C1E676CC43B}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{CABF17C8-98AF-3AA4-B9B0-81E9ED2440F8}</UniqueIdentifier>

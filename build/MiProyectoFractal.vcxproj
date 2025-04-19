@@ -65,24 +65,28 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Debug</LocalDebuggerWorkingDirectory>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\build\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MiProyectoFractal.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MiProyectoFractal</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Release</LocalDebuggerWorkingDirectory>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\build\MinSizeRel\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">MiProyectoFractal.dir\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">MiProyectoFractal</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/MinSizeRel</LocalDebuggerWorkingDirectory>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\build\RelWithDebInfo\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">MiProyectoFractal.dir\RelWithDebInfo\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">MiProyectoFractal</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/RelWithDebInfo</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -93,14 +97,12 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MinimalRebuild>
-      </MinimalRebuild>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SupportJustMyCode>
-      </SupportJustMyCode>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;UNICODE;_UNICODE;PLATFORM_WIN32;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
@@ -141,14 +143,12 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MinimalRebuild>
-      </MinimalRebuild>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SupportJustMyCode>
-      </SupportJustMyCode>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;PLATFORM_WIN32;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
@@ -191,14 +191,12 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MinimalRebuild>
-      </MinimalRebuild>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>MinSpace</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SupportJustMyCode>
-      </SupportJustMyCode>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;PLATFORM_WIN32;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
@@ -242,14 +240,12 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MinimalRebuild>
-      </MinimalRebuild>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SupportJustMyCode>
-      </SupportJustMyCode>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;PLATFORM_WIN32;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
@@ -341,8 +337,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\CreateSample.cpp" />
-    <ClCompile Include="..\src\FractalViewer.cpp" />
-    <ClInclude Include="..\src\FractalViewer.hpp" />
+    <ClCompile Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp" />
+    <ClInclude Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.hpp" />
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\fractal.psh">
+    </None>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\quad.vsh">
+    </None>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
