@@ -1,6 +1,24 @@
-cbuffer Constants
+// fractal.psh
+
+cbuffer Constants : register(b0)
 {
-    float4 TimeAndResolution; // x = Time, y = Resolution.x, z = Resolution.y, w = unused
+    float4 TimeAndResolution; // x=time, y=res.x, z=res.y, w=fractType
+    float4 CameraPos; // xyz=pos, w=is3D (no usado en 2D)
+    float4 CameraDirX; // xyz=right   (no usado)
+    float4 CameraDirY; // xyz=up      (no usado)
+    float4 CameraDirZ; // xyz=forward (no usado)
+
+    float4 ZoomOffset; // x=zoom, y=off.x, z=off.y, w=off.z
+    float4 FractalColor; // rgba tint
+    float4 BackgroundColor; // rgba background
+
+    float4 FractalC; // x=c.x, y=c.y (no usado aquí)
+    int maxiter;
+    float3 FractalParams1; // x=bailout, y=power(unused), z=escapeOffset(unused)
+    float4 FractalParams2; // x=gamma, y/z/w extras
+
+    float4 RenderFlags; // x=colorMode, y=shadingMode, z=useDE(unused), w=debugView(unused)
+    float4 AnimationParams; // x=timeScale, y=speedY(unused), z=swirlSpeed, w=seed(unused)
 };
 
 struct PSInput
@@ -9,35 +27,72 @@ struct PSInput
     float2 UV : TEXCOORD;
 };
 
-float4 main(PSInput input) : SV_TARGET
+float4 RenderMandelbrot2D(PSInput input)
 {
-    float time = TimeAndResolution.x;
+    // 1) Tiempo y resolución
+    float time        = TimeAndResolution.x * AnimationParams.x;  // timeScale
     float2 resolution = float2(TimeAndResolution.y, TimeAndResolution.z);
 
-    // Convertimos de [0,1] a [-aspect, aspect] para mantener proporci�n
-    float2 uv = (input.UV * 2.0 - 1.0) * float2(resolution.x / resolution.y, 1.0);
+    // 2) UV en [-1,1] con corrección de aspecto
+    float2 uv = input.UV * 2.0f - 1.0f;
+    uv.x *= resolution.x / resolution.y;
 
-    // Par�metros del fractal
-    float2 c = uv * 1.5;
+    // 3) Zoom y offset
+    float zoom    = ZoomOffset.x;      // default 1
+    float2 offset = ZoomOffset.yz;     // default 0,0
+    uv = uv / zoom + offset;
+
+    // 4) Dinámica de c: deformar fractal, no rotar
+    float2 c = uv; 
     float2 z = c;
+    // AnimationParams.z = ampX, .w = ampY
+    c.x += AnimationParams.z * sin(time);
+    c.y += AnimationParams.w * cos(time);
 
-    // Movimiento suave con el tiempo
-    c.x += 0.3 * sin(time * 0.5);
-    c.y += 0.3 * cos(time * 0.5);
+    // 5) Parámetros de iteración
+    int maxIter = maxiter; // ej. 100–1 000 000
+    float bailout = FractalParams1.x;       // ej. 2.0
+    float bb     = bailout * bailout;
 
-    int maxIter = 100;
-    int i;
-    for (i = 0; i < maxIter; ++i)
+    // 6) Iterar Mandelbrot
+    int   i = 0;
+    for (; i < maxIter; ++i)
     {
-        float x = z.x * z.x - z.y * z.y + c.x;
-        float y = 2.0 * z.x * z.y + c.y;
-
-        if (x * x + y * y > 4.0)
+        z = float2(z.x*z.x - z.y*z.y, 2.0f*z.x*z.y) + c;
+        if (dot(z, z) > bb)
             break;
-
-        z = float2(x, y);
     }
 
-    float t = i / (float) maxIter;
-    return float4(t, t * 0.6, t * 0.3 + 0.1, 1.0); // Colores simples
+    // 7) Normalizar y gamma opcional (RenderFlags.x)
+    float t = i / (float)maxIter;
+    if (RenderFlags.x > 0.5f)
+        t = pow(t, FractalParams2.x);
+
+    // 8) Interpolar entre fondo y color del fractal
+    float4 fg = FractalColor;    // default (1,1,1,1)
+    float4 bg = BackgroundColor; // default (0,0,0,1)
+    float4 col = lerp(bg, fg, t);
+
+    // 9) Shading opcional (RenderFlags.y)
+    if (RenderFlags.y > 0.5f)
+        col.rgb *= t;
+
+    return col;
+}
+
+
+float4 main(PSInput input) : SV_TARGET
+{
+    bool is3D = CameraPos.w > 0.5;
+    int ft = (int) TimeAndResolution.w;
+    if (is3D)
+    {
+        // TODO: RenderFractal3D(…)
+        return float4(0, 0, 0, 1);
+    }
+    else
+    {
+        // Solo Mandelbrot por ahora (ft ignored)
+        return RenderMandelbrot2D(input);
+    }
 }
