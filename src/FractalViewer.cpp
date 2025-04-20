@@ -303,7 +303,7 @@ namespace Diligent
     void FractalViewer::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
     {
         SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
-        m_Time += static_cast<float>(ElapsedTime); 
+        if (!paused) m_Time += static_cast<float>(ElapsedTime); 
         if (m_is3D)
             m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
     }
@@ -324,7 +324,7 @@ namespace Diligent
             // --- Fractal type selection (2D / 3D) ---
             ImGui::Separator();
             static int current2D = 0, current3D = 0;
-            const char* fractal2DOptions[] = { "Mandelbrot","Julia","Burning Ship","Custom 2D" };
+            const char* fractal2DOptions[] = { "Mandelbrot","Burning Ship","Burning Ship (Colors)","Custom 2D" };
             const char* fractal3DOptions[] = { "Mandelbulb","Menger Sponge","Kaleidoscopic IFS","Custom 3D" };
             if (ImGui::CollapsingHeader("2D Fractals", ImGuiTreeNodeFlags_DefaultOpen))
             {
@@ -401,9 +401,12 @@ namespace Diligent
             ImGui::Separator();
             ImGui::Text("Fractal Parameters:");
             ImGui::SliderInt("Max Iter", (int*)&m_maxiter, 10, 10000);
-            ImGui::SliderFloat("Bailout", &m_FractalParams1.y, 1.0f, 10.0f);
-            ImGui::SliderFloat("Power", &m_FractalParams1.z, 1.0f, 10.0f);
-            ImGui::SliderFloat("Escape Offs", &m_FractalParams1.w, 0.0f, 5.0f);
+            ImGui::SliderFloat("Bailout", &m_FractalParams1.x, 1.0f, 10.0f);
+            ImGui::SliderFloat("Power", &m_FractalParams1.y, 1.0f, 10.0f);
+            bool tempBool = (m_FractalParams1.z > 0.5f);
+            if (ImGui::Checkbox("Use Double Precision", &tempBool)) {
+                m_FractalParams1.z = tempBool ? 1.0f : 0.0f;
+            }
 
             // --- Flags de render ---
             ImGui::Separator();
@@ -412,6 +415,7 @@ namespace Diligent
             ImGui::Checkbox("Shading Mode", (bool*)&m_RenderFlags.y);
             ImGui::Checkbox("Use Distance Estimation", (bool*)&m_RenderFlags.z);
             ImGui::Checkbox("Debug View", (bool*)&m_RenderFlags.w);
+            ImGui::Checkbox("Paused", &paused);
             ImGui::SliderFloat("Gamma", &m_FractalParams2.x, 0.1f, 5.0f);
 
 

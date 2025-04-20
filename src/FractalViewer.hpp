@@ -57,7 +57,7 @@ namespace Diligent
 		int m_maxiter = 100; // iteraciones máximas
 
         // Parámetros generales del fractal
-        // x = maxIter, y = bailout, z = power (no usado aquí), w = escapeOffset
+		// x = bailout, y = power (no usado aquí), z = usesDoublePrecision
         float3 m_FractalParams1 = float3{ 2.0f, 2.0f, 0.0f };
         // x = gamma, yzw = libres
         float4 m_FractalParams2 = float4{ 1.0f, 0, 0, 0 };
@@ -75,6 +75,7 @@ namespace Diligent
         float m_CameraPitch = 0.0f;
         float m_CameraMoveSpeed = 1.0f;
         float m_CameraRotationSpeed = 0.01f;
+        bool paused = false;
 
 
     };
