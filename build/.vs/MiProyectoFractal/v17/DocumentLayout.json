@@ -3,10 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\build\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{EE721FA7-68E8-36CA-A926-1F643B1212EF}|MiProyectoFractal.vcxproj|C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\FractalViewer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{EE721FA7-68E8-36CA-A926-1F643B1212EF}|MiProyectoFractal.vcxproj|C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\Shaders\\fractal.psh||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{EE721FA7-68E8-36CA-A926-1F643B1212EF}|MiProyectoFractal.vcxproj|C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\Shaders\\fractal.psh||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{EE721FA7-68E8-36CA-A926-1F643B1212EF}|MiProyectoFractal.vcxproj|C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\FractalViewer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{EE721FA7-68E8-36CA-A926-1F643B1212EF}|MiProyectoFractal.vcxproj|C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\FractalViewer.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
@@ -32,27 +32,27 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "fractal.psh",
-              "DocumentMoniker": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\Shaders\\fractal.psh",
-              "RelativeDocumentMoniker": "..\\src\\Shaders\\fractal.psh",
-              "ToolTip": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\Shaders\\fractal.psh",
-              "RelativeToolTip": "..\\src\\Shaders\\fractal.psh",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAswE4BAAA4AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-04-20T02:04:15.031Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
               "Title": "FractalViewer.cpp",
               "DocumentMoniker": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\FractalViewer.cpp",
               "RelativeDocumentMoniker": "..\\src\\FractalViewer.cpp",
               "ToolTip": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\FractalViewer.cpp",
               "RelativeToolTip": "..\\src\\FractalViewer.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIIBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKsBAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-04-19T17:36:30.19Z",
+              "WhenOpened": "2025-04-21T02:42:43.983Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "fractal.psh",
+              "DocumentMoniker": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\Shaders\\fractal.psh",
+              "RelativeDocumentMoniker": "..\\src\\Shaders\\fractal.psh",
+              "ToolTip": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\Shaders\\fractal.psh",
+              "RelativeToolTip": "..\\src\\Shaders\\fractal.psh",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-04-20T02:04:15.031Z",
               "EditorCaption": ""
             },
             {
@@ -63,7 +63,7 @@
               "RelativeDocumentMoniker": "..\\src\\FractalViewer.hpp",
               "ToolTip": "C:\\Users\\carlo\\Documents\\Backup\\Migrar\\U\\2025-10\\CVI\\MiProyectoFractal\\src\\FractalViewer.hpp",
               "RelativeToolTip": "..\\src\\FractalViewer.hpp",
-              "ViewState": "AgIAADAAAAAAAAAAAAAYwE0AAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAADAAAAAAAAAAAAAYwEkAAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-04-19T17:50:50.531Z",
               "EditorCaption": ""

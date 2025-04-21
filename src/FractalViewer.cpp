@@ -1,4 +1,4 @@
-#include "FractalViewer.hpp"
+Ôªø#include "FractalViewer.hpp"
 #include "MapHelper.hpp"
 #include "GraphicsUtilities.h"
 #include "ColorConversion.h"
@@ -39,6 +39,7 @@ namespace Diligent
         // Tell the system that the shader source code is in HLSL.
         // For OpenGL, the engine will convert this into GLSL under the hood.
         ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
+		ShaderCI.HLSLVersion = { 6, 3 };
 
         // OpenGL backend requires emulated combined HLSL texture samplers (g_Texture + g_Texture_sampler combination)
         ShaderCI.Desc.UseCombinedTextureSamplers = true;
@@ -114,8 +115,8 @@ namespace Diligent
 
     void FractalViewer::CreateIndexBuffer() {
         static const Uint32 QuadIndices[] = {
-            0, 1, 2,  // Primer tri·ngulo
-            2, 1, 3   // Segundo tri·ngulo
+            0, 1, 2,  // Primer tri√°ngulo
+            2, 1, 3   // Segundo tri√°ngulo
         };
         // clang-format on
 
@@ -197,8 +198,8 @@ namespace Diligent
         {
             float4 TimeAndResolution;  // x = time, y = resolution.x, z = resolution.y, w = fractalType
 
-            // C·mara (usada tanto en 2D como en 3D)
-            float4 CameraPos;          // xyz = posiciÛn, w = is3D (0.0 o 1.0)
+            // C√°mara (usada tanto en 2D como en 3D)
+            float4 CameraPos;          // xyz = posici√≥n, w = is3D (0.0 o 1.0)
             float4 CameraDirX;         // xyz = right
             float4 CameraDirY;         // xyz = up
             float4 CameraDirZ;         // xyz = forward
@@ -206,15 +207,15 @@ namespace Diligent
             // Transformaciones comunes
             float4 ZoomOffset;         // x = zoom/scale, y = offset.x, z = offset.y, w = offset.z (3D)
 
-            // Par·metros de color
+            // Par√°metros de color
             float4 FractalColor;       // rgba o como multiplicador general
             float4 BackgroundColor;    // para mezclar o dejar fondo personalizable
 
-            // Constante C (˙til para Julia y otras variantes)
-            float4 FractalC;           // x = c.x, y = c.y, z/w pueden ser usados como animaciÛn extra
+            // Constante C (√∫til para Julia y otras variantes)
+            float4 FractalC;           // x = c.x, y = c.y, z/w pueden ser usados como animaci√≥n extra
 
-            // Par·metros generales del fractal
-			int maxiter;            // n˙mero m·ximo de iteraciones
+            // Par√°metros generales del fractal
+			int maxiter;            // n√∫mero m√°ximo de iteraciones
             float3 FractalParams1;     // x = maxIterations, y = bailout, z = power, w = escapeOffset
             float4 FractalParams2;     // valores adicionales si se requiere, puedes usarlo libremente
 
@@ -222,12 +223,12 @@ namespace Diligent
             float4 RenderFlags;        // x = colorMode, y = shadingMode, z = useDistanceEstimation, w = debugView
 
             // Para efectos de tiempo, movimiento o animaciones
-            float4 AnimationParams;    // x = velocidad X, y = velocidad Y, z = deformaciÛn, w = seed o fase
+            float4 AnimationParams;    // x = velocidad X, y = velocidad Y, z = deformaci√≥n, w = seed o fase
         };
 
         ShaderConstants CBufferData = {};
 
-        // 1. Tiempo, resoluciÛn y tipo de fractal
+        // 1. Tiempo, resoluci√≥n y tipo de fractal
         float fracType = m_is3D
             ? static_cast<float>(m_SelectedFractal3D)
             : static_cast<float>(m_SelectedFractal2D);
@@ -238,7 +239,7 @@ namespace Diligent
             fracType
         };
 
-        // 2. C·mara
+        // 2. C√°mara
         const auto& pos = m_Camera.GetPos();
         const auto& right = m_Camera.GetWorldRight();
         const auto& up = m_Camera.GetWorldUp();
@@ -263,16 +264,16 @@ namespace Diligent
         // 5. Constante C (Julia)
         CBufferData.FractalC = m_FractalC;
 
-		CBufferData.maxiter = m_maxiter; // n˙mero m·ximo de iteraciones
+		CBufferData.maxiter = m_maxiter; // n√∫mero m√°ximo de iteraciones
 
-        // 6. Par·metros del fractal
+        // 6. Par√°metros del fractal
         CBufferData.FractalParams1 = m_FractalParams1;
         CBufferData.FractalParams2 = m_FractalParams2;
 
         // 7. Flags de render
         CBufferData.RenderFlags = m_RenderFlags;
 
-        // 8. AnimaciÛn
+        // 8. Animaci√≥n
         CBufferData.AnimationParams = m_AnimationParams;
 
         // 9. Mapear y enviar a GPU
@@ -303,9 +304,19 @@ namespace Diligent
     void FractalViewer::Update(double CurrTime, double ElapsedTime, bool DoUpdateUI)
     {
         SampleBase::Update(CurrTime, ElapsedTime, DoUpdateUI);
-        if (!paused) m_Time += static_cast<float>(ElapsedTime); 
+
+        float dt = static_cast<float>(ElapsedTime);
+
+        if (!paused)
+            m_Time += dt;
+
         if (m_is3D)
-            m_Camera.Update(m_InputController, static_cast<float>(ElapsedTime));
+            m_Camera.Update(m_InputController, dt);
+
+        if (m_AutoZoomActive)
+        {
+            m_Zoom *= 1.0f + m_AutoZoomSpeed * dt;
+        }
     }
 
 
@@ -324,7 +335,7 @@ namespace Diligent
             // --- Fractal type selection (2D / 3D) ---
             ImGui::Separator();
             static int current2D = 0, current3D = 0;
-            const char* fractal2DOptions[] = { "Mandelbrot","Burning Ship","Burning Ship (Colors)","Custom 2D" };
+            const char* fractal2DOptions[] = { "Mandelbrot","Mandelbrot (Colors)","Burning Ship","Burning Ship (Colors)", "Phoenix (Colors)"};
             const char* fractal3DOptions[] = { "Mandelbulb","Menger Sponge","Kaleidoscopic IFS","Custom 3D" };
             if (ImGui::CollapsingHeader("2D Fractals", ImGuiTreeNodeFlags_DefaultOpen))
             {
@@ -341,7 +352,7 @@ namespace Diligent
             ImGui::Separator();
             ImGui::Checkbox("3D MODE", &m_is3D);
 
-            // --- C·mara ---
+            // --- C√°mara ---
             if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
             {
                 // Position
@@ -376,12 +387,47 @@ namespace Diligent
                     m_Camera.SetRotationSpeed(m_CameraRotationSpeed);
             }
 
-            // --- Transformaciones comunes ---
             ImGui::Separator();
             ImGui::Text("Transformations:");
             ImGui::DragFloat("Zoom", &m_Zoom, 0.2f, 0.001f, 1000000.0f, "%.6f");
             ImGui::DragFloat("Offset X", &m_OffsetX, 0.0005f, -2.0f, 2.0f, "%.6f");
             ImGui::DragFloat("Offset Y", &m_OffsetY, 0.0005f, -2.0f, 2.0f, "%.6f");
+
+            // ‚Äî Bot√≥n de auto‚Äëzoom ‚Äî 
+            if (ImGui::Button(m_AutoZoomActive ? "Stop Auto‚ÄëZoom" : "Start Auto‚ÄëZoom"))
+                m_AutoZoomActive = !m_AutoZoomActive;
+            ImGui::SameLine();
+            ImGui::SliderFloat("Zoom Speed", &m_AutoZoomSpeed, 0.1f, 10.0f, "%.2f");
+
+            ImGuiIO& io = ImGui::GetIO();
+            if (!io.WantCaptureMouse && ImGui::IsMouseClicked(0))
+            {
+                ImGuiViewport* vp = ImGui::GetMainViewport();
+                ImVec2  mpos = io.MousePos;
+                ImVec2  origin = vp->Pos;      // esquina superior‚Äëizquierda
+                ImVec2  size = vp->Size;     // anchura, altura
+
+                // 1) Normalizamos a [0,1]
+                float sx = (mpos.x - origin.x) / size.x;
+                float sy = (mpos.y - origin.y) / size.y;
+
+                // 2) Convertimos a NDC [-1,1]
+                float ndcX = sx * 2.0f - 1.0f;
+                float ndcY = sy * 2.0f - 1.0f;  
+
+                // 3) Ajustamos el aspect ratio
+                float aspect = size.x / size.y;
+                ndcX *= aspect;
+
+                // 4) Calculo del world‚Äëspace point:
+                //    uvF = ndc;   world = uvF/zoom + offset
+                float worldX = ndcX / m_Zoom + m_OffsetX;
+                float worldY = ndcY / m_Zoom + m_OffsetY;
+
+                // 5) **Asignamos** el nuevo offset (no sumamos incrementalmente)
+                m_OffsetX = worldX;
+                m_OffsetY = worldY;
+            }
             if (m_is3D)
                 ImGui::DragFloat("Offset Z", &m_OffsetZ, 0.001f, -2.0f, 2.0f, "%.6f");
 
@@ -397,7 +443,7 @@ namespace Diligent
             ImGui::Text("C Constant (Julia):");
             ImGui::InputFloat2("C (x, y)", &m_FractalC.x);
 
-            // --- Par·metros del fractal ---
+            // --- Par√°metros del fractal ---
             ImGui::Separator();
             ImGui::Text("Fractal Parameters:");
             ImGui::SliderInt("Max Iter", (int*)&m_maxiter, 10, 10000);
@@ -417,9 +463,10 @@ namespace Diligent
             ImGui::Checkbox("Debug View", (bool*)&m_RenderFlags.w);
             ImGui::Checkbox("Paused", &paused);
             ImGui::SliderFloat("Gamma", &m_FractalParams2.x, 0.1f, 5.0f);
+            ImGui::SliderFloat("Gamma", &m_FractalParams2.y, 0.1f, 5.0f);
 
 
-            // --- AnimaciÛn ---
+            // --- Animaci√≥n ---
             ImGui::Separator();
             ImGui::Text("Animation Params:");
             ImGui::SliderFloat("Speed X", &m_AnimationParams.x, -1.0f, 1.0f);

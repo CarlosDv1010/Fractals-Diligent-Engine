@@ -1,6 +1,6 @@
 // fractal.psh
 
-cbuffer Constants : register(b0)
+cbuffer Constants
 {
     float4 TimeAndResolution; // x=time, y=res.x, z=res.y, w=fractType
     float4 CameraPos; // xyz=pos, w=is3D (no usado en 2D)
@@ -27,6 +27,11 @@ struct PSInput
     float4 Pos : SV_POSITION;
     float2 UV : TEXCOORD;
 };
+
+double2 abs_double2(double2 v)
+{
+    return double2(abs(v.x), abs(v.y));
+}
 
 float4 RenderMandelbrot2D(PSInput input)
 {
@@ -121,6 +126,115 @@ float4 RenderMandelbrot2D(PSInput input)
     }
 }
 
+float4 RenderMandelbrot2DColors(PSInput input)
+{
+    bool useDouble = FractalParams1.z > 0.5f;
+
+    if (useDouble)
+    {
+        // ——— Double‐precision path ———
+        double time = (double) TimeAndResolution.x * (double) AnimationParams.x;
+        double2 resolution = double2((double) TimeAndResolution.y, (double) TimeAndResolution.z);
+
+        // UV en [-1,1] con corrección de aspecto
+        double2 uv = double2(input.UV * 2.0f - 1.0f);
+        uv.x *= resolution.x / resolution.y;
+
+        // Zoom y offset
+        double zoom = (double) ZoomOffset.x;
+        double2 offsetD = double2((double) ZoomOffset.y, (double) ZoomOffset.z);
+        uv = uv / zoom + offsetD;
+
+        // Inicializar c,y z
+        double2 c = uv;
+        double2 z = c;
+        // Animación de c
+        c.x += (double) AnimationParams.z * sin(time);
+        c.y += (double) AnimationParams.w * cos(time);
+
+        // Iterar Mandelbrot
+        int maxIter = maxiter;
+        double bailout = (double) FractalParams1.x;
+        double bb = bailout * bailout;
+        int i = 0;
+        for (; i < maxIter; ++i)
+        {
+            z = double2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+            if (dot(z, z) > bb) 
+                break;
+        }
+
+        // Normalizar y gamma
+        double td = (double) i / (double) maxIter;
+        if (RenderFlags.x > 0.5f) 
+            td = pow(td, (double) FractalParams2.x);
+        float t = (float) td;
+
+        // Paleta cosenoidal simple para resaltar patrones
+        float3 pal;
+        pal.x = 0.5f + 0.5f * cos(6.2831853f * (t + 0.0f));
+        pal.y = 0.5f + 0.5f * cos(6.2831853f * (t + 0.33f));
+        pal.z = 0.5f + 0.5f * cos(6.2831853f * (t + 0.66f));
+
+        // Aplicar tint y shading
+        float4 col = float4(pal * FractalColor.rgb, 1.0f);
+        if (RenderFlags.y > 0.5f) 
+            col.rgb *= t;
+        return col;
+    }
+    else
+    {
+        // ——— Float path ———
+        float time = TimeAndResolution.x * AnimationParams.x;
+        float2 resolution = float2(TimeAndResolution.y, TimeAndResolution.z);
+
+        // UV en [-1,1] con corrección de aspecto
+        float2 uv = input.UV * 2.0f - 1.0f;
+        uv.x *= resolution.x / resolution.y;
+
+        // Zoom y offset
+        float zoom = ZoomOffset.x;
+        float2 offsetF = ZoomOffset.yz;
+        uv = uv / zoom + offsetF;
+
+        // Inicializar c y z
+        float2 c = uv;
+        float2 z = c;
+        // Animar c
+        c.x += AnimationParams.z * sin(time);
+        c.y += AnimationParams.w * cos(time);
+
+        // Iterar Mandelbrot
+        int maxIter = maxiter;
+        float bailout = FractalParams1.x;
+        float bb = bailout * bailout;
+        int i = 0;
+        for (; i < maxIter; ++i)
+        {
+            z = float2(z.x * z.x - z.y * z.y, 2.0f * z.x * z.y) + c;
+            if (dot(z, z) > bb) 
+                break;
+        }
+
+        // Normalizar y gamma
+        float t = i / (float) maxIter;
+        if (RenderFlags.x > 0.5f) 
+            t = pow(t, FractalParams2.x);
+
+        // Paleta cosenoidal simple para resaltar patrones
+        float3 pal;
+        pal.x = 0.5f + 0.5f * cos(6.2831853f * (t + 0.0f));
+        pal.y = 0.5f + 0.5f * cos(6.2831853f * (t + 0.33f));
+        pal.z = 0.5f + 0.5f * cos(6.2831853f * (t + 0.66f));
+
+        // Aplicar tint y shading
+        float4 col = float4(pal * FractalColor.rgb, 1.0f);
+        if (RenderFlags.y > 0.5f) 
+            col.rgb *= t;
+        return col;
+    }
+}
+
 float4 RenderBurningShip2D(PSInput input)
 {
     bool useDouble = FractalParams1.z > 0.5f;
@@ -206,108 +320,173 @@ float4 RenderBurningShip2DColors(PSInput input)
 {
     bool useDouble = FractalParams1.z > 0.5f;
 
-    // Normalizamos UV y aplicamos zoom/offset (siempre en float para entrada uniforme)
     float timeF = TimeAndResolution.x * AnimationParams.x;
     float2 resF = float2(TimeAndResolution.y, TimeAndResolution.z);
     float2 uvF = input.UV * 2.0f - 1.0f;
     uvF.x *= resF.x / resF.y;
     uvF = uvF / ZoomOffset.x + ZoomOffset.yz;
 
+    float2 z = uvF;
+    float2 c = uvF;
+    c.x += AnimationParams.z * sin(timeF);
+    c.y += AnimationParams.w * cos(timeF);
+
+    int maxIt = maxiter;
+    float bailout = FractalParams1.x;
+    float bb = bailout * bailout;
+    int i = 0;
+
+    for (; i < maxIt; ++i)
+    {
+        z = float2(abs(z.x), abs(z.y));
+        z = float2(z.x * z.x - z.y * z.y, 2.0f * z.x * z.y) + c;
+        if (dot(z, z) > bb)
+            break;
+    }
+
+    float t;
+    if (i < maxIt)
+    {
+        float mag = length(z);
+        float nu = log2(log2(max(mag, 1e-6f)));
+        float smooth = i + 1.0f - nu;
+        t = smooth / (float) maxIt;
+    }
+    else
+    {
+        t = 1.0f;
+    }
+
+    if (RenderFlags.x > 0.5f)
+        t = pow(t, FractalParams2.x);
+    t = saturate(t);
+
+    float4 pal;
+    pal.x = 0.5f + 0.5f * cos(6.2831853f * (t + 0.0f));
+    pal.y = 0.5f + 0.5f * cos(6.2831853f * (t + 0.3333f));
+    pal.z = 0.5f + 0.5f * cos(6.2831853f * (t + 0.6667f));
+    pal.w = 1.0f;
+
+    float4 col = lerp(BackgroundColor, pal * FractalColor, t);
+    if (RenderFlags.y > 0.5f)
+        col.rgb *= t;
+    return col;
+    
+}
+
+float4 RenderJuliaTwinDragons2DColors(PSInput input)
+{
+    bool useDouble = FractalParams1.z > 0.5f;
+
+    // Float parameters
+    float timeF = TimeAndResolution.x * AnimationParams.x;
+    float2 resF = float2(TimeAndResolution.y, TimeAndResolution.z);
+    float2 uvF = input.UV * 2.0f - 1.0f;
+    uvF.x *= resF.x / resF.y;
+    uvF = uvF / ZoomOffset.x + ZoomOffset.yz;
+
+    // Constants
+    const double2 c0 = double2(-0.123f, 0.745f);
+    const double bailoutF = FractalParams1.x;
+    const double epsD = 1e-12;
+
     if (!useDouble)
     {
         // ——— Float path ———
         float2 z = uvF;
-        float2 c = uvF;
-        // animación opcional
+        float2 c = float2(c0.x, c0.y);
+        // animación de c
         c.x += AnimationParams.z * sin(timeF);
         c.y += AnimationParams.w * cos(timeF);
 
-        int maxIt = maxiter;
-        float bailout = FractalParams1.x;
-        float bb = bailout * bailout;
+        float bb = bailoutF * bailoutF;
         int i = 0;
-
-        // Burning Ship: abs en cada iteración
-        for (; i < maxIt; ++i)
+        for (; i < maxiter; ++i)
         {
-            z = float2(abs(z.x), abs(z.y));
-            float x2 = z.x * z.x - z.y * z.y;
-            float y2 = 2.0f * z.x * z.y;
-            z = float2(x2, y2) + c;
+            z = float2(z.x * z.x - z.y * z.y, 2.0f * z.x * z.y) + c;
             if (dot(z, z) > bb)
                 break;
         }
 
-        // smooth coloring
-        float mag = sqrt(dot(z, z));
-        float smooth = i + 1.0f - log2(log2(mag));
-        float t = smooth / (float) maxIt;
+        // smoothing cuando escapó
+        float td;
+        if (i < maxiter)
+        {
+            float mag = length(z);
+            float nu = log2(log2(max(mag, 1e-6f)));
+            float iterC = i + 1.0f - nu;
+            td = iterC / (float) maxiter;
+        }
+        else
+        {
+            td = 1.0f;
+        }
         if (RenderFlags.x > 0.5f)
-            t = pow(t, FractalParams2.x);
+            td = pow(td, FractalParams2.x);
 
-        // paleta cosenoidal RGB
-        float4 pal;
-        pal.x = 0.5f + 0.5f * cos(6.2831853f * (t + 0.0f));
-        pal.y = 0.5f + 0.5f * cos(6.2831853f * (t + 0.3333f));
-        pal.z = 0.5f + 0.5f * cos(6.2831853f * (t + 0.6667f));
-        pal.w = 1.0f;
+        // paleta cosenoidal
+        float3 pal;
+        pal.x = 0.5f + 0.5f * cos(6.2831853f * (td + 0.00f));
+        pal.y = 0.5f + 0.5f * cos(6.2831853f * (td + 0.33f));
+        pal.z = 0.5f + 0.5f * cos(6.2831853f * (td + 0.66f));
 
-        // mezcla fondo ↔ paleta·tint y shading
-        float4 col = lerp(BackgroundColor, pal * FractalColor, t);
+        float4 col = float4(pal * FractalColor.rgb, 1.0f);
         if (RenderFlags.y > 0.5f)
-            col.rgb *= t;
+            col.rgb *= td;
         return col;
     }
     else
     {
         // ——— Double path ———
         double timeD = (double) TimeAndResolution.x * (double) AnimationParams.x;
-        double2 resD = double2(TimeAndResolution.y, TimeAndResolution.z);
+        double2 resD = double2((double) TimeAndResolution.y, (double) TimeAndResolution.z);
 
-        // reconstruir uv en double
-        double2 uv;
-        uv.x = (double) input.UV.x * 2.0 - 1.0;
-        uv.y = (double) input.UV.y * 2.0 - 1.0;
-        uv.x *= resD.x / resD.y;
-        uv = uv / (double) ZoomOffset.x
-               + double2((double) ZoomOffset.y, (double) ZoomOffset.z);
+        double2 uvD;
+        uvD.x = (double) input.UV.x * 2.0 - 1.0;
+        uvD.y = (double) input.UV.y * 2.0 - 1.0;
+        uvD.x *= resD.x / resD.y;
+        uvD = uvD / (double) ZoomOffset.x + double2((double) ZoomOffset.y, (double) ZoomOffset.z);
 
-        double2 z = uv;
-        double2 c = uv;
+        double2 z = uvD;
+        double2 c = c0;
+        // animación de c
         c.x += (double) AnimationParams.z * sin(timeD);
         c.y += (double) AnimationParams.w * cos(timeD);
 
-        int maxIt = maxiter;
-        double bailout = (double) FractalParams1.x;
-        double bb = bailout * bailout;
+        double bb = bailoutF * bailoutF;
         int i = 0;
-
-        for (; i < maxIt; ++i)
+        for (; i < maxiter; ++i)
         {
-            z = double2(abs(z.x), abs(z.y));
-            double x2 = z.x * z.x - z.y * z.y;
-            double y2 = 2.0 * z.x * z.y;
-            z = double2(x2, y2) + c;
+            z = double2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
             if (z.x * z.x + z.y * z.y > bb)
                 break;
         }
 
-        // smooth coloring en double
-        double mag = sqrt(z.x * z.x + z.y * z.y);
-        double smooth = i + 1.0 - log2(log2(mag));
-        double td = smooth / (double) maxIt;
+        // smoothing solo si escapó
+        double td;
+        if (i < maxiter)
+        {
+            double magD = sqrt(z.x * z.x + z.y * z.y);
+            double nuD = log2(log2(max(magD, epsD)));
+            double iterC = i + 1.0 - nuD;
+            td = iterC / (double) maxiter;
+        }
+        else
+        {
+            td = 1.0;
+        }
         if (RenderFlags.x > 0.5f)
             td = pow(td, (double) FractalParams2.x);
 
-        // convertir a float para la paleta
         float t = (float) td;
-        float4 pal;
-        pal.x = 0.5f + 0.5f * cos(6.2831853f * (t + 0.0f));
-        pal.y = 0.5f + 0.5f * cos(6.2831853f * (t + 0.3333f));
-        pal.z = 0.5f + 0.5f * cos(6.2831853f * (t + 0.6667f));
-        pal.w = 1.0f;
 
-        float4 col = lerp(BackgroundColor, pal * FractalColor, t);
+        // misma paleta cosenoidal
+        float3 pal;
+        pal.x = 0.5f + 0.5f * cos(6.2831853f * (t + 0.00f));
+        pal.y = 0.5f + 0.5f * cos(6.2831853f * (t + 0.33f));
+        pal.z = 0.5f + 0.5f * cos(6.2831853f * (t + 0.66f));
+
+        float4 col = float4(pal * FractalColor.rgb, 1.0f);
         if (RenderFlags.y > 0.5f)
             col.rgb *= t;
         return col;
@@ -329,10 +508,14 @@ float4 main(PSInput input) : SV_TARGET
         {
             case 0: // Mandelbrot
                 return RenderMandelbrot2D(input);
-            case 1: // Burning Ship
+            case 1: // Mandelbrot Colors
+                return RenderMandelbrot2DColors(input);
+            case 2: // Burning Ship
                 return RenderBurningShip2D(input);
-            case 2: // Burning Ship (colores)
+            case 3: // Burning Ship (colores)
                 return RenderBurningShip2DColors(input);
+            case 4: // Phoenix
+                return RenderJuliaTwinDragons2DColors(input);
             default:
                 return RenderMandelbrot2D(input);
         }

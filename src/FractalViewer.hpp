@@ -76,6 +76,8 @@ namespace Diligent
         float m_CameraMoveSpeed = 1.0f;
         float m_CameraRotationSpeed = 0.01f;
         bool paused = false;
+        bool  m_AutoZoomActive = false;
+        float m_AutoZoomSpeed = 1.0f;
 
 
     };
