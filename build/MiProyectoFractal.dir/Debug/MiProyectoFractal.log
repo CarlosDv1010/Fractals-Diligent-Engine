@@ -1,4 +1,8 @@
 ﻿  FractalViewer.cpp
-C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(397,50): warning C4566: character represented by universal-character-name '\u2011' cannot be represented in the current code page (1252)
-C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(397,71): warning C4566: character represented by universal-character-name '\u2011' cannot be represented in the current code page (1252)
+C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(178,42): warning C4305: 'argument': truncation from 'double' to 'T'
+C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(178,42): warning C4305:         with
+C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(178,42): warning C4305:         [
+C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(178,42): warning C4305:             T=float
+C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(178,42): warning C4305:         ]
+C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(371,54): warning C4566: character represented by universal-character-name '\u2011' cannot be represented in the current code page (1252)
   MiProyectoFractal.vcxproj -> C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\build\Debug\MiProyectoFractal.exe

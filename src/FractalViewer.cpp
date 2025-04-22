@@ -170,12 +170,12 @@ namespace Diligent
         CreateIndexBuffer();
 
         m_Zoom = 1.0f;
-        m_OffsetX = m_OffsetY = m_OffsetZ = 0.0f;
+		m_Camera.SetPos({ 0.0f, 0.0f, -4.0f });
         m_FractalParams1 = float4(100, 2, 0, 0);
         m_FractalParams2 = float4(1, 0, 0, 0); // gamma = 1
         m_FractalColor = float4(1, 1, 1, 1);
         m_BackgroundColor = float4(0, 0, 0, 1);
-        m_RenderFlags = float4(0, 0, 0, 0); // sin gamma, sin shading
+        m_Options3D = float4(100, 10.0f, 0.001, 0);
 
     }
 
@@ -220,7 +220,7 @@ namespace Diligent
             float4 FractalParams2;     // valores adicionales si se requiere, puedes usarlo libremente
 
             // Opciones de render o efectos especiales
-            float4 RenderFlags;        // x = colorMode, y = shadingMode, z = useDistanceEstimation, w = debugView
+            float4 Options3D;        // x=maxSteps, y=maxDist, z=threshold, w=pause(unused)
 
             // Para efectos de tiempo, movimiento o animaciones
             float4 AnimationParams;    // x = velocidad X, y = velocidad Y, z = deformación, w = seed o fase
@@ -271,7 +271,7 @@ namespace Diligent
         CBufferData.FractalParams2 = m_FractalParams2;
 
         // 7. Flags de render
-        CBufferData.RenderFlags = m_RenderFlags;
+        CBufferData.Options3D = m_Options3D;
 
         // 8. Animación
         CBufferData.AnimationParams = m_AnimationParams;
@@ -336,7 +336,7 @@ namespace Diligent
             ImGui::Separator();
             static int current2D = 0, current3D = 0;
             const char* fractal2DOptions[] = { "Mandelbrot","Mandelbrot (Colors)","Burning Ship","Burning Ship (Colors)", "Phoenix (Colors)"};
-            const char* fractal3DOptions[] = { "Mandelbulb","Menger Sponge","Kaleidoscopic IFS","Custom 3D" };
+            const char* fractal3DOptions[] = { "Mandelbulb","Menger Sponge","Quaternion Julia Set","Mandelbox" };
             if (ImGui::CollapsingHeader("2D Fractals", ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::Combo("2D Type", &current2D, fractal2DOptions, IM_ARRAYSIZE(fractal2DOptions));
@@ -353,52 +353,27 @@ namespace Diligent
             ImGui::Checkbox("3D MODE", &m_is3D);
 
             // --- Cámara ---
-            if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                // Position
-                float3 pos = m_Camera.GetPos();
-                if (ImGui::InputFloat3("Position", &pos.x))
-                    m_Camera.SetPos(pos);
-
-                // Rotation
-                ImGui::SliderFloat("Yaw", &m_CameraYaw, -180.0f, 180.0f);
-                ImGui::SliderFloat("Pitch", &m_CameraPitch, -89.0f, 89.0f);
-                m_Camera.SetRotation(m_CameraYaw, m_CameraPitch);
-
-                // Projection attributes
-                auto proj = m_Camera.GetProjAttribs();
-                float nearP = proj.NearClipPlane;
-                float farP = proj.FarClipPlane;
-                float aspect = proj.AspectRatio;
-                float fov = proj.FOV;
-                if (ImGui::InputFloat("Near Clip", &nearP) ||
-                    ImGui::InputFloat("Far Clip", &farP) ||
-                    ImGui::InputFloat("Aspect", &aspect) ||
-                    ImGui::InputFloat("FOV", &fov))
-                {
-                    m_Camera.SetProjAttribs(nearP, farP, aspect, fov,
-                        proj.PreTransform, proj.IsGL);
-                }
-
-                // Speeds
+            if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen) && m_is3D)
+            {                
                 if (ImGui::SliderFloat("Move Speed", &m_CameraMoveSpeed, 0.01f, 100.f))
                     m_Camera.SetMoveSpeed(m_CameraMoveSpeed);
                 if (ImGui::SliderFloat("Rotation Speed", &m_CameraRotationSpeed, 0.001f, 1.0f))
                     m_Camera.SetRotationSpeed(m_CameraRotationSpeed);
             }
 
-            ImGui::Separator();
-            ImGui::Text("Transformations:");
-            ImGui::DragFloat("Zoom", &m_Zoom, 0.2f, 0.001f, 1000000.0f, "%.6f");
-            ImGui::DragFloat("Offset X", &m_OffsetX, 0.0005f, -2.0f, 2.0f, "%.6f");
-            ImGui::DragFloat("Offset Y", &m_OffsetY, 0.0005f, -2.0f, 2.0f, "%.6f");
-
-            // — Botón de auto‑zoom — 
-            if (ImGui::Button(m_AutoZoomActive ? "Stop Auto‑Zoom" : "Start Auto‑Zoom"))
-                m_AutoZoomActive = !m_AutoZoomActive;
-            ImGui::SameLine();
-            ImGui::SliderFloat("Zoom Speed", &m_AutoZoomSpeed, 0.1f, 10.0f, "%.2f");
-
+            if (!m_is3D) {
+                ImGui::Separator();
+                ImGui::Text("Transformations:");
+                ImGui::DragFloat("Zoom", &m_Zoom, 0.2f, 0.001f, 1000000.0f, "%.6f");
+                ImGui::DragFloat("Offset X", &m_OffsetX, 0.0005f, -2.0f, 2.0f, "%.6f");
+                ImGui::DragFloat("Offset Y", &m_OffsetY, 0.0005f, -2.0f, 2.0f, "%.6f");
+                // — Botón de auto‑zoom — 
+                if (ImGui::Button(m_AutoZoomActive ? "Stop Auto‑Zoom" : "Start Auto Zoom"))
+                    m_AutoZoomActive = !m_AutoZoomActive;
+                ImGui::SameLine();
+                ImGui::SliderFloat("Zoom Speed", &m_AutoZoomSpeed, 0.1f, 10.0f, "%.2f");
+            }
+            
             ImGuiIO& io = ImGui::GetIO();
             if (!io.WantCaptureMouse && ImGui::IsMouseClicked(0))
             {
@@ -428,9 +403,6 @@ namespace Diligent
                 m_OffsetX = worldX;
                 m_OffsetY = worldY;
             }
-            if (m_is3D)
-                ImGui::DragFloat("Offset Z", &m_OffsetZ, 0.001f, -2.0f, 2.0f, "%.6f");
-
 
             // --- Colores ---
             ImGui::Separator();
@@ -438,33 +410,34 @@ namespace Diligent
             ImGui::ColorEdit4("Fractal Color", &m_FractalColor.x);
             ImGui::ColorEdit4("Background Color", &m_BackgroundColor.x);
 
-            // --- Constante C para Julia ---
-            ImGui::Separator();
-            ImGui::Text("C Constant (Julia):");
-            ImGui::InputFloat2("C (x, y)", &m_FractalC.x);
+            
 
-            // --- Parámetros del fractal ---
-            ImGui::Separator();
-            ImGui::Text("Fractal Parameters:");
-            ImGui::SliderInt("Max Iter", (int*)&m_maxiter, 10, 10000);
-            ImGui::SliderFloat("Bailout", &m_FractalParams1.x, 1.0f, 10.0f);
-            ImGui::SliderFloat("Power", &m_FractalParams1.y, 1.0f, 10.0f);
-            bool tempBool = (m_FractalParams1.z > 0.5f);
-            if (ImGui::Checkbox("Use Double Precision", &tempBool)) {
-                m_FractalParams1.z = tempBool ? 1.0f : 0.0f;
+            if (!m_is3D) {
+                // --- Constante C para Julia ---
+                ImGui::Separator();
+                ImGui::Text("C Constant (Julia):");
+                ImGui::InputFloat2("C (x, y)", &m_FractalC.x);
+
+                ImGui::Separator();
+                ImGui::Text("Fractal Parameters:");
+                ImGui::SliderInt("Max Iter", (int*)&m_maxiter, 10, 10000);
+                ImGui::SliderFloat("Bailout", &m_FractalParams1.x, 1.0f, 10.0f);
+                bool tempBool = (m_FractalParams1.z > 0.5f);
+                if (ImGui::Checkbox("Use Double Precision", &tempBool)) {
+                    m_FractalParams1.z = tempBool ? 1.0f : 0.0f;
+                }
+
+                
             }
-
+            
             // --- Flags de render ---
-            ImGui::Separator();
-            ImGui::Text("Render Options:");
-            ImGui::Checkbox("Color Mode", (bool*)&m_RenderFlags.x);
-            ImGui::Checkbox("Shading Mode", (bool*)&m_RenderFlags.y);
-            ImGui::Checkbox("Use Distance Estimation", (bool*)&m_RenderFlags.z);
-            ImGui::Checkbox("Debug View", (bool*)&m_RenderFlags.w);
-            ImGui::Checkbox("Paused", &paused);
-            ImGui::SliderFloat("Gamma", &m_FractalParams2.x, 0.1f, 5.0f);
-            ImGui::SliderFloat("Gamma", &m_FractalParams2.y, 0.1f, 5.0f);
-
+            if (m_is3D) {
+                ImGui::Separator();
+                ImGui::Text("Render Options:");
+                ImGui::SliderFloat("Max Steps", &m_Options3D.x, 1.0f, 1000.0f);
+                ImGui::SliderFloat("Max Dist", &m_Options3D.y, 0.001f, 100.0f);
+                ImGui::SliderFloat("Threshold", &m_Options3D.z, 0.00001f, 0.01f, "%.5f", ImGuiSliderFlags_None);
+            }
 
             // --- Animación ---
             ImGui::Separator();
@@ -473,6 +446,13 @@ namespace Diligent
             ImGui::SliderFloat("Speed Y", &m_AnimationParams.y, -1.0f, 1.0f);
             ImGui::SliderFloat("Deformation", &m_AnimationParams.z, -2.0f, 2.0f);
             ImGui::SliderFloat("Phase/Seed", &m_AnimationParams.w, 0.0f, 1.0f);
+
+			ImGui::Separator();
+            ImGui::Checkbox("Paused", &paused);
+            ImGui::SliderFloat("Power", &m_FractalParams1.y, 1.0f, 10.0f);
+            ImGui::SliderFloat("Gamma", &m_FractalParams2.x, 0.1f, 5.0f);
+            ImGui::SliderFloat("Gamma", &m_FractalParams2.y, 0.1f, 5.0f);
+
 
             ImGui::End();
         }

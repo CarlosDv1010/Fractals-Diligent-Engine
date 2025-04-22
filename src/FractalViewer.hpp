@@ -64,7 +64,7 @@ namespace Diligent
 
         // Opciones de render
         // x = gammaMode(0/1), y = shadingMode(0/1), z/w sin uso
-        float4 m_RenderFlags = float4{ 0,0,0,0 };
+        float4 m_Options3D = float4{ 0,0,0,0 };
 
         // Animación
         // x = timeScale, y = speedY, z = swirlSpeed, w = seed
