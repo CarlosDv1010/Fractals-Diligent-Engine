@@ -16,6 +16,7 @@ file(GLOB_RECURSE SRC_FILES "src/*.cpp" "src/*.hpp")
 file(GLOB_RECURSE SHADER_FILES
     "${CMAKE_SOURCE_DIR}/src/Shaders/*.vsh"
     "${CMAKE_SOURCE_DIR}/src/Shaders/*.psh"
+    "${CMAKE_SOURCE_DIR}/src/Shaders/*.comp"
 )
 
 list(APPEND SRC_FILES

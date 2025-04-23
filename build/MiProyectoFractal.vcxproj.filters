@@ -20,7 +20,13 @@
     <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\fractal.psh">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\fractalCompute.psh">
+      <Filter>Shaders</Filter>
+    </None>
     <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\quad.vsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\quad_ps.psh">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

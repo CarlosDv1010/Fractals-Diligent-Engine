@@ -74,7 +74,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PreBuildEvent>
-      <Message>Copying shader fractal.psh	Copying shader quad.vsh</Message>
+      <Message>Copying shader fractal.psh	Copying shader fractalCompute.psh	Copying shader quad.vsh	Copying shader quad_ps.psh</Message>
       <Command>setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
@@ -89,7 +89,29 @@ if %errorlevel% neq 0 goto :VCEnd
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/fractalCompute.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/fractalCompute.psh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad.vsh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad.vsh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad_ps.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad_ps.psh
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -109,7 +131,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PreBuildEvent>
-      <Message>Copying shader fractal.psh	Copying shader quad.vsh</Message>
+      <Message>Copying shader fractal.psh	Copying shader fractalCompute.psh	Copying shader quad.vsh	Copying shader quad_ps.psh</Message>
       <Command>setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
@@ -124,7 +146,29 @@ if %errorlevel% neq 0 goto :VCEnd
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/fractalCompute.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/fractalCompute.psh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad.vsh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad.vsh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad_ps.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad_ps.psh
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -144,7 +188,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PreBuildEvent>
-      <Message>Copying shader fractal.psh	Copying shader quad.vsh</Message>
+      <Message>Copying shader fractal.psh	Copying shader fractalCompute.psh	Copying shader quad.vsh	Copying shader quad_ps.psh</Message>
       <Command>setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
@@ -159,7 +203,29 @@ if %errorlevel% neq 0 goto :VCEnd
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/fractalCompute.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/fractalCompute.psh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad.vsh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad.vsh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad_ps.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad_ps.psh
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -179,7 +245,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <PreBuildEvent>
-      <Message>Copying shader fractal.psh	Copying shader quad.vsh</Message>
+      <Message>Copying shader fractal.psh	Copying shader fractalCompute.psh	Copying shader quad.vsh	Copying shader quad_ps.psh</Message>
       <Command>setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
@@ -194,7 +260,29 @@ if %errorlevel% neq 0 goto :VCEnd
 setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
 if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/fractalCompute.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/fractalCompute.psh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
 "C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad.vsh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad.vsh
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E copy_if_different C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/src/Shaders/quad_ps.psh C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/build/Shaders/quad_ps.psh
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone

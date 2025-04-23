@@ -1,0 +1,158 @@
+cbuffer Constants : register(b0)
+{
+    float4 TimeAndResolution; // x=time, y=res.x, z=res.y, w=fractType
+    float4 CameraPos; // xyz=pos, w=is3D (no usado en 2D)
+    float4 CameraDirX; // xyz=right   (no usado)
+    float4 CameraDirY; // xyz=up      (no usado)
+    float4 CameraDirZ; // xyz=forward (no usado)
+
+    float4 ZoomOffset; // x=zoom, y=off.x, z=off.y, w=off.z
+    float4 FractalColor; // rgba tint
+    float4 BackgroundColor; // rgba background
+
+    float4 FractalC; // x=c.x, y=c.y (no usado aqu?)
+    int maxiter;
+    float3 FractalParams1; // x=bailout, y=power(unused), z = usesDoublePrecision
+    float4 FractalParams2; // x=gamma, y/z/w extras
+
+    float4 Options3D; // x=maxSteps, y=maxDist, z=threshold, w=pause(unused)
+    float4 AnimationParams; // x=timeScale, y=speedY(unused), z=swirlSpeed, w=seed(unused)
+
+};
+
+float DE_Mandelbulb(float3 pos, float power)
+{
+    float3 z = pos;
+    float dr = 1.0;
+    float r = 0.0;
+
+    const float bailout = 2.0;
+    const float bailout2 = bailout * bailout;
+    const int iterDE = 100;
+
+    for (int i = 0; i < iterDE; ++i)
+    {
+        float r2 = dot(z, z);
+        r = sqrt(r2);
+        if (r2 > bailout2)
+            break;
+
+        float theta = acos(z.z / r);
+        float phi = atan2(z.y, z.x);
+        dr = pow(r, power - 1.0) * power * dr + 1.0;
+
+        float zr = pow(r, power);
+        float ntheta = theta * power;
+        float nphi = phi * power;
+        float sinT = sin(ntheta);
+
+        z = zr * float3(
+            sinT * cos(nphi),
+            sinT * sin(nphi),
+            cos(ntheta)
+        ) + pos;
+    }
+
+    return 0.5 * log(r) * r / dr;
+}
+
+
+float3 calculateNormal(float3 p, float power)
+{
+    const float epsilon = 0.001;
+    float3 n = float3(
+        DE_Mandelbulb(p + float3(epsilon, 0, 0), power) - DE_Mandelbulb(p - float3(epsilon, 0, 0), power),
+        DE_Mandelbulb(p + float3(0, epsilon, 0), power) - DE_Mandelbulb(p - float3(0, epsilon, 0), power),
+        DE_Mandelbulb(p + float3(0, 0, epsilon), power) - DE_Mandelbulb(p - float3(0, 0, epsilon), power)
+    );
+    return normalize(n);
+}
+
+float4 RenderMandelbulb3D(float2 uv) : SV_Target
+{
+    // ——— Recupera resolución y UV ———
+    float2 resolution = float2(TimeAndResolution.y, TimeAndResolution.z);
+    float time = TimeAndResolution.x;
+
+    // ——— Origen y dirección del rayo desde CBuffer ———
+    float3 ro = CameraPos.xyz + CameraDirZ.xyz * ZoomOffset.x;
+    float3 rd = normalize(
+        uv.x * CameraDirX.xyz +
+        uv.y * CameraDirY.xyz +
+        CameraDirZ.xyz
+    );
+
+    // ——— Parámetros de ray‐marching ———
+    int maxSteps = int(Options3D.x);
+    float maxDist = Options3D.y;
+    float thresh = Options3D.z;
+    
+    float minPower = FractalParams1.y;
+    float maxPower = 11.0;
+
+    float sinNormalized = sin(time * 0.5) * 0.5 + 0.5; // Para no lidiar con negativos
+
+    float animatedPower = lerp(minPower, maxPower, sinNormalized);
+
+    float totalDist = 0.0;
+    float dist = 0.0;
+    int i;
+
+    // ——— Bucle de ray‐marching ———
+    for (i = 0; i < maxSteps; ++i)
+    {
+        float3 p = ro + rd * totalDist;
+        dist = DE_Mandelbulb(p, animatedPower);
+        totalDist += dist;
+        if (dist < thresh || totalDist > maxDist)
+            break;
+    }
+
+    // ——— Color de Fondo (gradiente cielo‐horizonte) ———
+    float gradientFactor = saturate(rd.y * 0.5 + 0.5);
+    float3 horizonColor = float3(0.9, 0.8, 0.7);
+    float3 bgColor = lerp(
+        horizonColor,
+        BackgroundColor.xyz,
+        gradientFactor
+    );
+    float4 finalColor = float4(bgColor, 1.0);
+
+    // ——— Si impactó la superficie ———
+    if (dist < thresh)
+    {
+        float3 hitPos = ro + rd * totalDist;
+        float3 normal = calculateNormal(hitPos, animatedPower);
+
+        // Luz direccional simple
+        float3 lightDir = normalize(float3(0.5, 0.8, -0.3));
+        float diffuse = saturate(dot(normal, lightDir));
+        float ambient = 0.2;
+
+        // Color base tomado de tu cbuffer
+        float3 baseColor = FractalColor.xyz;
+
+        finalColor.rgb = baseColor * (diffuse + ambient);
+    }
+
+    return finalColor;
+}
+
+
+RWTexture2D<float4> OutputTex : register(u0);
+
+[numthreads(16, 16, 1)]
+void CSMain(uint3 DTid : SV_DispatchThreadID)
+{
+    uint width, height;
+    OutputTex.GetDimensions(width, height);
+    if (DTid.x >= width || DTid.y >= height)
+        return;
+    
+    float2 uv = float2(DTid.xy) / float2(width, height) * 2.0 - 1.0;
+    uv.x *= width / (float) height;
+
+    float4 result = RenderMandelbulb3D(uv);
+    OutputTex[DTid.xy] = result;
+
+}

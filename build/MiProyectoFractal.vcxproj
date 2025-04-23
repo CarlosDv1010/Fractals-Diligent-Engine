@@ -341,7 +341,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.hpp" />
     <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\fractal.psh">
     </None>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\fractalCompute.psh">
+    </None>
     <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\quad.vsh">
+    </None>
+    <None Include="C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\Shaders\quad_ps.psh">
     </None>
   </ItemGroup>
   <ItemGroup />
