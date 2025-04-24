@@ -138,21 +138,170 @@ float4 RenderMandelbulb3D(float2 uv) : SV_Target
     return finalColor;
 }
 
+float PI = 3.14159265359;
+
+float DE_MengerSponge(float3 pos, int iterations)
+{
+    float d = length(max(abs(pos) - 1.0, 0.0));
+    float s = 1.0;
+    for (int i = 0; i < iterations; ++i)
+    {
+        s /= 3.0;
+        float3 a = fmod(abs(pos), 2.0 * s) - s;
+        float da = max(abs(a.x), abs(a.y));
+        float db = max(abs(a.y), abs(a.z));
+        float dc = max(abs(a.z), abs(a.x));
+        d = max(d, -min(da, min(db, dc)));
+    }
+    return d;
+}
+
+float getCross(float3 p, float size)
+{
+    p = abs(p) - size / 3.0;
+    float bx = max(p.y, p.z);
+    float by = max(p.x, p.z);
+    float bz = max(p.x, p.y);
+    return min(min(bx, by), bz);
+}
+
+float getInnerMenger(float3 p, float size, int iterations)
+{
+    float d = Options3D.z;
+    float scale = 1.0;
+    for (int i = 0; i < iterations; i++)
+    {
+        float r = size / scale;
+        float3 q = fmod(p + r, 2.0 * r) - r;
+        d = min(d, getCross(q, r));
+        scale *= 3.0;
+    }
+    return d;
+}
+
+float4 map(float3 p, float size, int iterations)
+{
+    float d = 0.0;
+    float3 col = float3(1, 1, 1);
+
+    d = -getInnerMenger(p, size, iterations);
+
+    col = abs(floor(p * 3.0 * size - size) + 0.1);
+
+    return float4(col, d);
+}
+
+float4 rayMarch(float3 ro, float3 rd, float size, int iterations, float thresh, float maxDist, int maxSteps)
+{
+    float dist = 0;
+    float3 p;
+    float3 col;
+    for (int i = 0; i < maxSteps; i++)
+    {
+        p = ro + rd * dist;
+        float4 res = map(p, size, iterations);
+        col = res.rgb;
+        if (res.w < thresh)
+            break;
+        dist += res.w;
+        if (dist > maxDist)
+            break;
+    }
+    return float4(col, dist);
+}
+
+float3 getNormal(float3 p, float size, int iterations, float thresh)
+{
+    float2 e = float2(thresh, 0.0);
+    float d = map(p, size, iterations).w;
+    float3 n = d - float3(map(p - e.xyy, size, iterations).w, map(p - e.yxy, size, iterations).w, map(p - e.yyx, size, iterations).w);
+    return normalize(n);
+}
+
+float calculateShadow(float3 p, float3 lightDir, float size, int iterations, float thresh, float maxDist, int maxSteps)
+{
+    float t = thresh * 2.0;
+    float shadow = 1.0;
+    for (int i = 0; i < maxSteps; i++)
+    {
+        float3 pos = p + lightDir * t;
+        float d = DE_MengerSponge(pos / size, iterations) * size;
+        if (d < thresh)
+        {
+            shadow = 0.0;
+            break;
+        }
+        shadow = min(shadow, 10.0 * d / t);
+        t += d;
+        if (t > maxDist)
+            break;
+    }
+    return shadow;
+}
+
+
+float4 RenderMengerSponge3D(float2 uv)
+{
+    float3 ro = CameraPos.xyz;
+    float3 rd = normalize(uv.x * CameraDirX.xyz + uv.y * CameraDirY.xyz + CameraDirZ.xyz);
+    float size = ZoomOffset.x;
+    int iterations = maxiter;
+    float thresh = Options3D.z;
+    float maxDist = Options3D.y;
+    int maxSteps = int(Options3D.x);
+
+    float4 res = rayMarch(ro, rd, size, iterations, thresh, maxDist, maxSteps);
+    float3 bg = lerp(float3(0.9, 0.8, 0.7), BackgroundColor.xyz, saturate(rd.y * 0.5 + 0.5));
+
+    if (res.w >= maxDist)
+        return float4(bg, 1);
+
+    float3 p = ro + rd * res.w;
+    float3 normal = getNormal(p, size, iterations, thresh);
+
+    float3 lightDir = normalize(float3(0.5, 0.8, -0.3));
+    float diffuse = saturate(dot(normal, lightDir));
+    float ambient = 0.2;
+
+    float shadow = calculateShadow(p, lightDir, size, iterations, thresh, maxDist, maxSteps);
+
+    float3 baseColor = FractalColor.xyz;
+    float3 finalColor = baseColor * (diffuse * shadow + ambient);
+
+    return float4(finalColor, 1);
+}
+
+
 
 RWTexture2D<float4> OutputTex : register(u0);
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
     uint width, height;
     OutputTex.GetDimensions(width, height);
     if (DTid.x >= width || DTid.y >= height)
         return;
-    
+
     float2 uv = float2(DTid.xy) / float2(width, height) * 2.0 - 1.0;
     uv.x *= width / (float) height;
 
-    float4 result = RenderMandelbulb3D(uv);
-    OutputTex[DTid.xy] = result;
+    int fractalType = int(TimeAndResolution.w);
 
+    float4 result;
+
+    switch (fractalType)
+    {
+        case 0: // Mandelbulb
+            result = RenderMandelbulb3D(uv);
+            break;
+        case 1: // Menger Sponge
+            result = RenderMengerSponge3D(uv);
+            break;
+        default:
+            result = RenderMandelbulb3D(uv);
+            break;
+    }
+
+    OutputTex[DTid.xy] = result;
 }

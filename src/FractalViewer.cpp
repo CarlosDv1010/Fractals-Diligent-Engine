@@ -564,7 +564,7 @@ namespace Diligent
                 ImGui::Text("Render Options:");
                 ImGui::SliderFloat("Max Steps", &m_Options3D.x, 1.0f, 1000.0f);
                 ImGui::SliderFloat("Max Dist", &m_Options3D.y, 0.001f, 100.0f);
-                ImGui::SliderFloat("Threshold", &m_Options3D.z, 0.00001f, 0.01f, "%.5f", ImGuiSliderFlags_None);
+                ImGui::SliderFloat("Threshold", &m_Options3D.z, 0.00001f, 0.1f, "%.5f", ImGuiSliderFlags_None);
             }
 
             // --- Animación ---
