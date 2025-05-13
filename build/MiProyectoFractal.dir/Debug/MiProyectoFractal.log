@@ -1,7 +1,10 @@
-﻿  FractalViewer.cpp
+﻿  Building Custom Rule C:/Users/carlo/Documents/Backup/Migrar/U/2025-10/CVI/MiProyectoFractal/CMakeLists.txt
+  CreateSample.cpp
+  FractalViewer.cpp
 C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(296,42): warning C4305: 'argument': truncation from 'double' to 'T'
 C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(296,42): warning C4305:         with
 C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(296,42): warning C4305:         [
 C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(296,42): warning C4305:             T=float
 C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\src\FractalViewer.cpp(296,42): warning C4305:         ]
+  Generating Code...
   MiProyectoFractal.vcxproj -> C:\Users\carlo\Documents\Backup\Migrar\U\2025-10\CVI\MiProyectoFractal\build\Debug\MiProyectoFractal.exe

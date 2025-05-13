@@ -229,8 +229,8 @@ namespace Diligent
 
     void FractalViewer::CreateIndexBuffer() {
         static const Uint32 QuadIndices[] = {
-            0, 1, 2,  // Primer triángulo
-            2, 1, 3   // Segundo triángulo
+            0, 1, 2, 
+            2, 1, 3   
         };
 
         BufferDesc IndBuffDesc;
@@ -253,10 +253,10 @@ namespace Diligent
 
         static const Vertex QuadVerts[] =
         {
-            {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}}, // inferior izquierda
-            {{-1.0f,  1.0f, 0.0f}, {0.0f, 0.0f}}, // superior izquierda
-            {{ 1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}}, // inferior derecha
-            {{ 1.0f,  1.0f, 0.0f}, {1.0f, 0.0f}}, // superior derecha
+            {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}}, 
+            {{-1.0f,  1.0f, 0.0f}, {0.0f, 0.0f}},
+            {{ 1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}}, 
+            {{ 1.0f,  1.0f, 0.0f}, {1.0f, 0.0f}}, 
         };
 
 
