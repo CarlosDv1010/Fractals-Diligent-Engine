@@ -123,16 +123,29 @@ float4 RenderMandelbulb3D(float2 uv) : SV_Target
     {
         float3 hitPos = ro + rd * totalDist;
         float3 normal = calculateNormal(hitPos, animatedPower);
-
+        float3 viewDir = normalize(ro - hitPos);
+        
         // Luz direccional simple
         float3 lightDir = normalize(float3(0.5, 0.8, -0.3));
         float diffuse = saturate(dot(normal, lightDir));
         float ambient = 0.2;
+        
+        // Componente Especular (Blinn-Phong)
+        float3 halfwayDir = normalize(lightDir + viewDir);
+        float specAngle = saturate(dot(normal, halfwayDir));
+        float specular = pow(specAngle, 32.0);
+        
+        float fresnelPower = 4.0; // Potencia del Fresnel, ajústala
+        float fresnel = pow(1.0 - saturate(dot(normal, viewDir)), fresnelPower);
 
-        // Color base tomado de tu cbuffer
         float3 baseColor = FractalColor.xyz;
+        float3 specularColor = float3(1.0, 1.0, 1.0);
+        float3 fresnelColor = float3(0.8, 0.8, 1.0);
+        
+        float3 litColor = baseColor * (diffuse + ambient) + specular * specularColor;
+        finalColor.rgb = lerp(litColor, fresnelColor, fresnel * 0.5);
 
-        finalColor.rgb = baseColor * (diffuse + ambient);
+        finalColor.rgb = saturate(finalColor.rgb);
     }
 
     return finalColor;
@@ -258,15 +271,31 @@ float4 RenderMengerSponge3D(float2 uv)
 
     float3 p = ro + rd * res.w;
     float3 normal = getNormal(p, size, iterations, thresh);
+    float3 viewDir = normalize(ro - p);
 
-    float3 lightDir = normalize(float3(0.5, 0.8, -0.3));
+    float3 lightDir = normalize(float3(0.5, 0.8, -0.3)); 
     float diffuse = saturate(dot(normal, lightDir));
     float ambient = 0.2;
+
+// Componente Especular (Blinn-Phong)
+    float3 halfwayDir = normalize(lightDir + viewDir);
+    float specAngle = saturate(dot(normal, halfwayDir));
+    float specular = pow(specAngle, 32.0); 
+
+    // Efecto Fresnel
+    float fresnelPower = 5.0;
+    float fresnel = pow(1.0 - saturate(dot(normal, viewDir)), fresnelPower);
 
     float shadow = calculateShadow(p, lightDir, size, iterations, thresh, maxDist, maxSteps);
 
     float3 baseColor = FractalColor.xyz;
-    float3 finalColor = baseColor * (diffuse * shadow + ambient);
+    float3 specularColor = float3(1.0, 1.0, 1.0);
+    float3 fresnelColor = float3(1.0, 0.9, 0.8); 
+
+    float3 litColor = baseColor * (diffuse * shadow + ambient) + specular * specularColor * shadow; 
+    float3 finalColor = lerp(litColor, fresnelColor, fresnel * 0.6); 
+
+    finalColor = saturate(finalColor);
 
     return float4(finalColor, 1);
 }

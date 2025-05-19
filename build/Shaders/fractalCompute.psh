@@ -123,16 +123,29 @@ float4 RenderMandelbulb3D(float2 uv) : SV_Target
     {
         float3 hitPos = ro + rd * totalDist;
         float3 normal = calculateNormal(hitPos, animatedPower);
-
+        float3 viewDir = normalize(ro - hitPos);
+        
         // Luz direccional simple
         float3 lightDir = normalize(float3(0.5, 0.8, -0.3));
         float diffuse = saturate(dot(normal, lightDir));
         float ambient = 0.2;
+        
+        // Componente Especular (Blinn-Phong)
+        float3 halfwayDir = normalize(lightDir + viewDir);
+        float specAngle = saturate(dot(normal, halfwayDir));
+        float specular = pow(specAngle, 32.0);
+        
+        float fresnelPower = 4.0; // Potencia del Fresnel, ajústala
+        float fresnel = pow(1.0 - saturate(dot(normal, viewDir)), fresnelPower);
 
-        // Color base tomado de tu cbuffer
         float3 baseColor = FractalColor.xyz;
+        float3 specularColor = float3(1.0, 1.0, 1.0);
+        float3 fresnelColor = float3(0.8, 0.8, 1.0);
+        
+        float3 litColor = baseColor * (diffuse + ambient) + specular * specularColor;
+        finalColor.rgb = lerp(litColor, fresnelColor, fresnel * 0.5);
 
-        finalColor.rgb = baseColor * (diffuse + ambient);
+        finalColor.rgb = saturate(finalColor.rgb);
     }
 
     return finalColor;
