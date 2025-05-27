@@ -1,0 +1,16 @@
+# Ignore build directories
+build/.vs/
+build/MiProyectoFractal.dir/
+
+# Commonly ignored build artifacts
+build/**/*.obj
+build/**/*.exe
+build/**/*.pdb
+build/**/*.ilk
+build/**/*.log
+
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.sln.docstates

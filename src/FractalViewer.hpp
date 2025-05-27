@@ -16,6 +16,8 @@ namespace Diligent
         virtual void Update(double CurrTime, double ElapsedTime, bool DoUpdateUI) override final;
 
         virtual const Char* GetSampleName() const override final { return "Tutorial02: Cube"; }
+        virtual void WindowResize(Uint32 Width, Uint32 Height) override;
+
 
     protected:
 		virtual void UpdateUI() override final;
@@ -36,34 +38,35 @@ namespace Diligent
 
         struct ShaderConstants
         {
-            float4 TimeAndResolution;  // x = time, y = resolution.x, z = resolution.y, w = fractalType
+            float4 TimeAndResolution; // x=time, y=res.x, z=res.y, w=fractType
+            float4 CameraPos; // xyz=pos, w=is3D
+            float4 CameraDirX; // xyz=right
+            float4 CameraDirY; // xyz=up
+            float4 CameraDirZ; // xyz=forward
 
-            // Cámara (usada en 3D)
-            float4 CameraPos;          // xyz = posición, w = is3D (0.0 o 1.0)
-            float4 CameraDirX;         // xyz = right
-            float4 CameraDirY;         // xyz = up
-            float4 CameraDirZ;         // xyz = forward
+            float4 ZoomOffset; // x=zoom/size, y=off.x, z=off.y, w=off.z
+            float4 FractalColor; // rgba tint
+            float4 BackgroundColor; // rgba background
 
-            // Transformaciones comunes
-            float4 ZoomOffset;         // x = zoom/scale, y = offset.x, z = offset.y, w = offset.z (3D)
+            float4 FractalC; // x=c.x, y=c.y
+            int maxiter; // Usado para Menger iterations
+            float3 FractalParams1; // x=bailout(unused), y=power_mandelbulb_min, z=unused
+            float4 FractalParams2; // x=gamma(unused), y/z/w extras
 
-            // Parámetros de color
-            float4 FractalColor;       // rgba o como multiplicador general
-            float4 BackgroundColor;    // para mezclar o dejar fondo personalizable
+            float4 Options3D; // x=maxSteps, y=maxDist, z=threshold, w=unused
+            float4 AnimationParams; // x=timeScale, y=unused, z=unused, w=unused
 
-            // Constante C (útil para Julia y otras variantes)
-            float4 FractalC;           // x = c.x, y = c.y, z/w pueden ser usados como animación extra
+            float4 LightPositionAndRadius; // xyz=pos, w=radius
+            float4 LightColorAndIntensity; // rgb=color, a=intensity
 
-            // Parámetros generales del fractal
-            int maxiter;            // número máximo de iteraciones
-            float3 FractalParams1;     // x = maxIterations, y = bailout, z = power, w = escapeOffset
-            float4 FractalParams2;     // valores adicionales si se requiere, puedes usarlo libremente
-
-            // Opciones de render o efectos especiales
-            float4 Options3D;        // x=maxSteps, y=maxDist, z=threshold, w=pause(unused)
-
-            // Para efectos de tiempo, movimiento o animaciones
-            float4 AnimationParams;    // x = velocidad X, y = velocidad Y, z = deformación, w = seed o fase
+            // Nuevos parámetros para ajuste fino
+            float aoStrengthMultiplier;
+            float directLightBrightness;
+            float ambientLightBrightness;
+            float reflectivityFactor; // Multiplica la reflectividad calculada por Fresnel
+            float fresnelStrength; // Potencia del exponente Fresnel
+            float normalEpsilonScale; // Escala para el epsilon de cálculo de normales (ej. 0.5)
+			float2 textureScale; // Escala de textura UV (x=scaleX, y=scaleY)
         };
 
         RenderMode m_RenderMode = RenderMode::PixelShader;
@@ -101,6 +104,17 @@ namespace Diligent
         float4 m_FractalParams2 = float4{ 1.0f, 0, 0, 0 };
         float4 m_Options3D = float4{ 0,0,0,0 };
         float4 m_AnimationParams = float4{ 1.0f,0,0,0 };
+        float m_aoStrengthMultiplier = 1.3f;
+        float m_directLightBrightness = 1.5f;
+        float m_ambientLightBrightness = 0.2f;
+        float m_reflectivityFactor = 0.7f;
+        float m_fresnelStrength = 4.0f;
+        float m_normalEpsilonScale = 0.5f;
+		float2 m_textureScale = float2{ 1.0f, 1.0f }; // Escala de textura UV (x=scaleX, y=scaleY)
+        float3 m_LightPosition = { -2.0f, 2.0f, -3.0f };
+        float            m_LightRadius = 0.2f;
+        float3  m_LightColor = { 1.0f, 1.0f, 0.8f }; // Usar Diligent::Color o Diligent::float3
+        float            m_LightIntensity = 20.0f;
 
         // Cámara extras
         float m_CameraYaw = 0.0f;

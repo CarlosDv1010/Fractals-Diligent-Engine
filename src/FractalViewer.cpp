@@ -135,7 +135,7 @@ namespace Diligent
 
         ShaderResourceVariableDesc Vars[] =
         {
-            {SHADER_TYPE_COMPUTE, "OutputTex", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+            {SHADER_TYPE_COMPUTE, "OutputTex", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
         };
 
         PSOCreateInfo.PSODesc.ResourceLayout.Variables = Vars;
@@ -203,7 +203,7 @@ namespace Diligent
 
         ShaderResourceVariableDesc Vars[] =
         {
-            {SHADER_TYPE_PIXEL, "InputTex", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+            {SHADER_TYPE_PIXEL, "InputTex", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
         };
 
         SamplerDesc SamLinearClampDesc
@@ -316,6 +316,7 @@ namespace Diligent
             float fracType = m_is3D
                 ? static_cast<float>(m_SelectedFractal3D)
                 : static_cast<float>(m_SelectedFractal2D);
+            const auto& SCDesc = m_pSwapChain->GetDesc();
             CBufferData.TimeAndResolution = float4{
                 m_Time,
                 static_cast<float>(m_pSwapChain->GetDesc().Width),
@@ -349,7 +350,19 @@ namespace Diligent
             CBufferData.FractalParams2 = m_FractalParams2;
 
             CBufferData.Options3D = m_Options3D;
-		    CBufferData.AnimationParams = m_AnimationParams;
+            CBufferData.AnimationParams = m_AnimationParams;
+            CBufferData.LightPositionAndRadius = Diligent::float4{ m_LightPosition.x, m_LightPosition.y, m_LightPosition.z, m_LightRadius };
+            CBufferData.LightColorAndIntensity = Diligent::float4{ m_LightColor.r, m_LightColor.g, m_LightColor.b, m_LightIntensity };
+
+            // Nuevos parámetros para ajuste fino
+            CBufferData.aoStrengthMultiplier = m_aoStrengthMultiplier;
+            CBufferData.directLightBrightness = m_directLightBrightness;
+            CBufferData.ambientLightBrightness = m_ambientLightBrightness;
+            CBufferData.reflectivityFactor = m_reflectivityFactor;
+            CBufferData.fresnelStrength = m_fresnelStrength;
+            CBufferData.normalEpsilonScale = m_normalEpsilonScale;
+
+            CBufferData.textureScale = Diligent::float2{ 1.0f, 1.0f };
 		}
 
         {
@@ -557,6 +570,25 @@ namespace Diligent
 
                 
             }
+
+            if (ImGui::CollapsingHeader("Lighting & Material", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Text("Light Source:");
+                ImGui::DragFloat3("Position", &m_LightPosition.x, 0.1f);
+                ImGui::SliderFloat("Radius", &m_LightRadius, 0.01f, 5.0f);
+                ImGui::ColorEdit3("Color", &m_LightColor.r);
+                ImGui::SliderFloat("Intensity", &m_LightIntensity, 0.0f, 100.0f);
+
+                ImGui::Separator();
+                ImGui::Text("Path Tracing Adjustments:");
+                ImGui::SliderFloat("AO Strength", &m_aoStrengthMultiplier, 0.0f, 3.0f);
+                ImGui::SliderFloat("Direct Light Brightness", &m_directLightBrightness, 0.0f, 5.0f);
+                ImGui::SliderFloat("Ambient Light Brightness", &m_ambientLightBrightness, 0.0f, 2.0f);
+                ImGui::SliderFloat("Reflectivity Factor", &m_reflectivityFactor, 0.0f, 1.0f);
+                ImGui::SliderFloat("Fresnel Strength", &m_fresnelStrength, 1.0f, 10.0f);
+                ImGui::SliderFloat("Normal Epsilon Scale", &m_normalEpsilonScale, 0.01f, 2.0f);
+				ImGui::SliderFloat2("Texture Scale (UV)", &m_textureScale.x, 0.1f, 10.0f, "%.2f");
+            }
             
             // --- Flags de render ---
             if (m_is3D) {
@@ -583,6 +615,58 @@ namespace Diligent
 
 
             ImGui::End();
+        }
+    }
+
+    void FractalViewer::WindowResize(Uint32 Width, Uint32 Height)
+    {
+        SampleBase::WindowResize(Width, Height);
+
+        if (m_usesComputePipeline && m_pDevice) // Añadir chequeo de m_pDevice por si acaso
+        {
+            const auto& SCDesc = m_pSwapChain->GetDesc();
+
+            // Si m_pComputeOutputTex no existe, o si las dimensiones cambiaron
+            if (!m_pComputeOutputTex || // Si es la primera vez o se liberó
+                m_pComputeOutputTex->GetDesc().Width != SCDesc.Width ||
+                m_pComputeOutputTex->GetDesc().Height != SCDesc.Height)
+            {
+                LOG_INFO_MESSAGE("Resizing compute output texture to ", SCDesc.Width, "x", SCDesc.Height);
+
+                // Paso 1: Liberar explícitamente la referencia al objeto antiguo.
+                // Esto decrementará el contador de referencias. Si llega a cero, el objeto se destruirá.
+                // Si había otras referencias, el objeto seguirá vivo, pero este RefCntAutoPtr ya no lo apuntará.
+                if (m_pComputeOutputTex) // Solo si realmente apunta a algo
+                {
+                    m_pComputeOutputTex.Release(); // O m_pComputeOutputTex = nullptr;
+                }
+                // Ahora m_pComputeOutputTex es efectivamente un puntero nulo o está "vacío"
+                // y listo para recibir un nuevo objeto.
+
+                TextureDesc TexDesc;
+                TexDesc.Name = "Compute Output Texture";
+                TexDesc.Type = RESOURCE_DIM_TEX_2D;
+                TexDesc.Width = SCDesc.Width;
+                TexDesc.Height = SCDesc.Height;
+                TexDesc.Format = TEX_FORMAT_RGBA8_UNORM;
+                TexDesc.Usage = USAGE_DEFAULT;
+                TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
+
+                // Paso 2: Crear la nueva textura. Ahora CreateTexture no debería quejarse.
+                m_pDevice->CreateTexture(TexDesc, nullptr, &m_pComputeOutputTex);
+
+                // Paso 3: Re-enlazar la nueva vista UAV al SRB del compute shader
+                if (m_pComputeSRB && m_pComputeOutputTex)
+                {
+                    m_pComputeSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "OutputTex")
+                        ->Set(m_pComputeOutputTex->GetDefaultView(TEXTURE_VIEW_UNORDERED_ACCESS));
+                }
+                else
+                {
+                    if (!m_pComputeSRB) LOG_ERROR_MESSAGE("m_pComputeSRB is null during WindowResize after texture recreation.");
+                    if (!m_pComputeOutputTex) LOG_ERROR_MESSAGE("Failed to recreate m_pComputeOutputTex during WindowResize.");
+                }
+            }
         }
     }
 
