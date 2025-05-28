@@ -4,3 +4,5 @@ Para ejecutar seguir las siguientes instrucciones:
 - Borrar la carpeta de build
 - Hacer cmake .. en la carpeta raíz del proyecto
 - Abrir el .sln y hacer build del proyecto o directamente abrir el .exe generado anteriormente  
+
+Vídeo resultados: https://www.youtube.com/watch?v=NoZW9JOzLVc
