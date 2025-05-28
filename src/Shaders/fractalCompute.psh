@@ -18,21 +18,49 @@ cbuffer Constants : register(b0)
     float4 Options3D; // x=maxSteps, y=maxDist, z=threshold, w=unused
     float4 AnimationParams; // x=timeScale, y=unused, z=unused, w=unused
 
-    float4 LightPositionAndRadius; // xyz=pos, w=radius (USADO SOLO POR MANDELBULB NUEVO)
-    float4 LightColorAndIntensity; // rgb=color, a=intensity (USADO SOLO POR MANDELBULB NUEVO)
+    float4 LightPositionAndRadius; // xyz=pos, w=radius
+    float4 LightColorAndIntensity; // rgb=color, a=intensity
 
-    // Nuevos parámetros para ajuste fino (USADO SOLO POR MANDELBULB NUEVO)
     float aoStrengthMultiplier;
     float directLightBrightness;
     float ambientLightBrightness;
     float reflectivityFactor;
     float fresnelStrength;
     float normalEpsilonScale;
-    float2 textureScale;
+    int BOUNCESMAX;
+    float padding;
 };
 
-// --- FUNCIONES PARA MANDELBULB (NUEVA VERSIÓN CON PATH TRACING) ---
-float DE_Mandelbulb_PathTraced(float3 pos, float power) // Renombrada para evitar conflicto si se necesitara la original
+// --- FUNCIONES COMUNES DE PATH TRACING ---
+float rand_PathTraced(float2 co)
+{
+    return frac(sin(dot(co.xy, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+float SDF_Sphere_PathTraced(float3 p, float3 center, float radius)
+{
+    return length(p - center) - radius;
+}
+
+struct RayHitResult_PathTraced
+{
+    bool isHit;
+    float3 hitPos;
+    float3 normal;
+    float distance;
+    int objectType;
+    float3 baseColorIfFractal;
+};
+
+float3 GetBackgroundColorFromRay_PathTraced(float3 rayDir)
+{
+    float gradientFactor = saturate(rayDir.y * 0.5 + 0.5);
+    float3 horizonColor = float3(0.6, 0.7, 0.85);
+    return lerp(horizonColor, BackgroundColor.xyz, gradientFactor);
+}
+
+// --- FUNCIONES PARA MANDELBULB ---
+float DE_Mandelbulb_PathTraced(float3 pos, float power)
 {
     float3 z = pos;
     float dr = 1.0;
@@ -69,22 +97,7 @@ float3 calculateNormalMandelbulb_PathTraced(float3 p, float power, float epsilon
     return normalize(n);
 }
 
-float SDF_Sphere_PathTraced(float3 p, float3 center, float radius)
-{
-    return length(p - center) - radius;
-}
-
-struct RayHitResult_PathTraced
-{
-    bool isHit;
-    float3 hitPos;
-    float3 normal;
-    float distance;
-    int objectType;
-    float3 baseColorIfFractal;
-};
-
-RayHitResult_PathTraced castRay_PathTraced(float3 ro, float3 rd,
+RayHitResult_PathTraced castRay_Mandelbulb_PT(float3 ro, float3 rd,
                                            float mandelbulbPower,
                                            float3 lightPos, float lightRadius,
                                            int maxSteps, float maxDist, float thresh, float normal_epsilon_world)
@@ -95,6 +108,7 @@ RayHitResult_PathTraced castRay_PathTraced(float3 ro, float3 rd,
     result.objectType = 0;
     result.baseColorIfFractal = FractalColor.xyz;
     float totalDist = 0.0;
+    const float MIN_STEP_FACTOR_MB = 0.05f; // Avance mínimo para Mandelbulb
 
     for (int i = 0; i < maxSteps; ++i)
     {
@@ -102,13 +116,15 @@ RayHitResult_PathTraced castRay_PathTraced(float3 ro, float3 rd,
         float distToFractal_world = DE_Mandelbulb_PathTraced(p_world, mandelbulbPower);
         float distToLight_world = SDF_Sphere_PathTraced(p_world, lightPos, lightRadius);
         float distToScene_world = min(distToFractal_world, distToLight_world);
-        totalDist += distToScene_world;
+        
+        float step_dist = max(distToScene_world, thresh * MIN_STEP_FACTOR_MB);
+        totalDist += step_dist;
 
         if (distToScene_world < thresh)
         {
             result.isHit = true;
-            result.hitPos = p_world - rd * (distToScene_world - thresh * 0.5);
-            result.distance = totalDist - (distToScene_world - thresh * 0.5);
+            result.hitPos = p_world - rd * (max(distToScene_world, 0.0f) - thresh * 0.5f);
+            result.distance = totalDist - (max(distToScene_world, 0.0f) - thresh * 0.5f);
             if (distToLight_world < distToFractal_world)
             {
                 result.objectType = 2;
@@ -127,26 +143,24 @@ RayHitResult_PathTraced castRay_PathTraced(float3 ro, float3 rd,
     return result;
 }
 
-float rand_PathTraced(float2 co)
-{
-    return frac(sin(dot(co.xy, float2(12.9898, 78.233))) * 43758.5453);
-}
-
-float calculateAO_PathTraced(float3 pos_world, float3 normal_world, float mandelbulbPower, float thresh, float normal_epsilon_world)
+float calculateAO_Mandelbulb_PT(float3 pos_world, float3 normal_world, float mandelbulbPower, float thresh, float normal_epsilon_world)
 {
     float occlusion = 0.0;
     const int aoSamples = 5;
     const float aoRadius = 0.5 * directLightBrightness;
-    const float aoMaxDistStep = aoRadius / 2.5;
+    const float aoMaxDistStep = aoRadius / 2.5f;
+    const float MIN_AO_STEP_FACTOR_MB = 0.05f;
+
     for (int i = 0; i < aoSamples; ++i)
     {
         float3 randomVec = float3(rand_PathTraced(pos_world.xy + float(i)) - 0.5, rand_PathTraced(pos_world.yz + float(i)) - 0.5, rand_PathTraced(pos_world.zx + float(i)) - 0.5);
-        float3 sampleDir = normalize(normal_world + randomVec * 0.7);
+        float3 sampleDir = normalize(normal_world + randomVec * 0.7f);
         if (dot(sampleDir, normal_world) < 0.05)
             sampleDir = reflect(sampleDir, normal_world);
         if (dot(sampleDir, normal_world) < 0.05)
             sampleDir = normal_world;
-        float totalSampleDist = thresh * 1.1;
+
+        float totalSampleDist = normal_epsilon_world * 1.5f;
         for (int j = 0; j < 5; ++j)
         {
             float3 pSample_world = pos_world + sampleDir * totalSampleDist;
@@ -156,7 +170,8 @@ float calculateAO_PathTraced(float3 pos_world, float3 normal_world, float mandel
                 occlusion += (1.0 - smoothstep(0.0, aoRadius, totalSampleDist));
                 break;
             }
-            totalSampleDist += min(dFractal_world, aoMaxDistStep);
+            float step_dist_ao = max(dFractal_world, thresh * MIN_AO_STEP_FACTOR_MB);
+            totalSampleDist += min(step_dist_ao, aoMaxDistStep);
             if (totalSampleDist > aoRadius)
                 break;
         }
@@ -164,29 +179,8 @@ float calculateAO_PathTraced(float3 pos_world, float3 normal_world, float mandel
     return saturate(1.0 - (occlusion / float(aoSamples)) * aoStrengthMultiplier);
 }
 
-float3 GetBackgroundColorFromRay_PathTraced(float3 rayDir)
-{
-    float gradientFactor = saturate(rayDir.y * 0.5 + 0.5);
-    float3 horizonColor = float3(0.6, 0.7, 0.85);
-    return lerp(horizonColor, BackgroundColor.xyz, gradientFactor);
-}
 
-float3 getPointDirectIllumination_PathTraced(float3 hitPos_world, float3 normal_world, float3 viewDir, float3 baseColor,
-                                             float3 lightPos_world, float3 lightEmissiveColorWithIntensity)
-{
-    float3 actualLightDir = normalize(lightPos_world - hitPos_world);
-    float diffuse = saturate(dot(normal_world, actualLightDir));
-    float distToLight = length(lightPos_world - hitPos_world);
-    float attenuation = 1.0 / (1.0 + 0.08 * distToLight + 0.03 * distToLight * distToLight);
-    float3 halfwayDir = normalize(actualLightDir + viewDir);
-    float specAngle = saturate(dot(normal_world, halfwayDir));
-    float specular = pow(specAngle, 24.0);
-    return baseColor * diffuse * lightEmissiveColorWithIntensity * attenuation * directLightBrightness +
-           specular * lightEmissiveColorWithIntensity * attenuation * directLightBrightness * 0.7;
-}
-
-
-// --- FUNCIONES PARA MENGER SPONGE (VERSIÓN ORIGINAL RESTAURADA) ---
+// --- FUNCIONES PARA MENGER SPONGE ---
 float DE_MengerSponge_Original(float3 pos, int iterations)
 {
     float d = length(max(abs(pos) - 1.0, 0.0));
@@ -203,7 +197,7 @@ float DE_MengerSponge_Original(float3 pos, int iterations)
     return d;
 }
 
-float getCross_Original(float3 p, float size_for_cross) // Renombrado size a size_for_cross
+float getCross_Original(float3 p, float size_for_cross)
 {
     p = abs(p) - size_for_cross / 3.0;
     float bx = max(p.y, p.z);
@@ -214,54 +208,30 @@ float getCross_Original(float3 p, float size_for_cross) // Renombrado size a siz
 
 float getInnerMenger_Original(float3 p, float menger_size, int iterations, float initial_dist_thresh)
 {
-    float d = initial_dist_thresh; // Usar el threshold pasado
+    float d = initial_dist_thresh;
     float scale = 1.0;
     for (int i = 0; i < iterations; i++)
     {
         float r = menger_size / scale;
-        float3 q = fmod(p + r, 2.0 * r) - r;
+        float3 q = fmod(p + r, 2.0 * r) - r; 
         d = min(d, getCross_Original(q, r));
         scale *= 3.0;
     }
     return d;
 }
 
+
 float4 map_Menger_Original(float3 p, float menger_size, int iterations, float initial_dist_thresh)
 {
-    float d = -getInnerMenger_Original(p, menger_size, iterations, initial_dist_thresh);
-    // El color original era simple, podemos usar FractalColor.xyz o mantenerlo si es necesario
-    float3 col = FractalColor.xyz; // abs(floor(p * 3.0 / menger_size - 0.5) + 0.1); 
-    return float4(col, d);
+    float3 col = FractalColor.xyz;
+    float d_inner = getInnerMenger_Original(p, menger_size, iterations, initial_dist_thresh);
+    float d_sdf = -d_inner; 
+    return float4(col, d_sdf);
 }
 
-float4 rayMarch_Menger_Original(float3 ro, float3 rd, float menger_size, int iterations, float thresh, float maxDist, int maxSteps, float initial_dist_thresh_for_map)
+float3 getNormal_Menger_Original(float3 p, float menger_size, int iterations, float thresh_for_epsilon, float initial_dist_thresh_for_map)
 {
-    float current_dist_marched = 0; // Renombrado para evitar confusión con la 'd' de la SDF
-    float3 p_on_ray;
-    float3 hit_color = FractalColor.xyz; // Color por defecto
-    
-    for (int i = 0; i < maxSteps; i++)
-    {
-        p_on_ray = ro + rd * current_dist_marched;
-        float4 map_result = map_Menger_Original(p_on_ray, menger_size, iterations, initial_dist_thresh_for_map);
-        hit_color = map_result.rgb; // Actualizar color en cada paso (como en el original)
-        
-        float estimated_dist_to_surface = map_result.w; // Esta es la distancia con signo de map_Menger_Original
-
-        if (estimated_dist_to_surface < thresh) // Si la distancia estimada es menor que el umbral, consideramos un hit
-            break;
-        
-        current_dist_marched += estimated_dist_to_surface; // Avanzar por la distancia estimada
-        
-        if (current_dist_marched > maxDist)
-            break;
-    }
-    return float4(hit_color, current_dist_marched); // Devolver el color del último punto y la distancia total marchada
-}
-
-float3 getNormal_Menger_Original(float3 p, float menger_size, int iterations, float thresh, float initial_dist_thresh_for_map)
-{
-    float2 e = float2(thresh * 0.5, 0.0); // Usar un epsilon más pequeño para normales
+    float2 e = float2(thresh_for_epsilon * 0.5f, 0.0);
     float d_center = map_Menger_Original(p, menger_size, iterations, initial_dist_thresh_for_map).w;
     float3 n = d_center - float3(
         map_Menger_Original(p - e.xyy, menger_size, iterations, initial_dist_thresh_for_map).w,
@@ -271,179 +241,253 @@ float3 getNormal_Menger_Original(float3 p, float menger_size, int iterations, fl
     return normalize(n);
 }
 
-float calculateShadow_Menger_Original(float3 p_hit, float3 lightDir_normalized, float menger_size, int iterations, float thresh, float maxDist_shadow, int maxSteps_shadow)
+
+RayHitResult_PathTraced castRay_Menger_PT(float3 ro, float3 rd,
+                                          float mengerSize, int mengerIterations,
+                                          float3 lightPos, float lightRadius,
+                                          int maxSteps, float maxDist, float thresh, float normal_epsilon_world)
 {
-    float t = thresh * 2.0; // Empezar un poco alejado de la superficie
-    float shadow_factor = 1.0;
-    for (int i = 0; i < maxSteps_shadow; i++)
+    RayHitResult_PathTraced result;
+    result.isHit = false;
+    result.distance = maxDist;
+    result.objectType = 0;
+    result.baseColorIfFractal = FractalColor.xyz;
+    float totalDist = 0.0;
+    const float MIN_STEP_FACTOR = 0.1f; 
+    float initial_dist_thresh_param = mengerSize;
+
+    for (int i = 0; i < maxSteps; ++i)
     {
-        float3 pos_on_shadow_ray = p_hit + lightDir_normalized * t;
-        // Para la sombra, usamos la SDF DE_MengerSponge_Original que devuelve distancia al sólido
-        float dist_to_solid = DE_MengerSponge_Original(pos_on_shadow_ray / menger_size, iterations) * menger_size;
+        float3 p_world = ro + rd * totalDist;
         
-        if (dist_to_solid < thresh)
+        float distToFractal_world = map_Menger_Original(p_world, mengerSize, mengerIterations, initial_dist_thresh_param).w;
+        
+        float distToLight_world = SDF_Sphere_PathTraced(p_world, lightPos, lightRadius);
+        float distToScene_world = min(distToFractal_world, distToLight_world);
+        
+        float step_dist = max(distToScene_world, thresh * MIN_STEP_FACTOR);
+        totalDist += step_dist;
+
+        if (distToScene_world < thresh)
         {
-            shadow_factor = 0.0; // Obstruido
-            break;
-        }
-        // Penumbra suave (opcional, pero estaba en tu original)
-        shadow_factor = min(shadow_factor, 10.0 * dist_to_solid / t);
-        
-        t += dist_to_solid;
-        if (t > maxDist_shadow)
-            break;
-    }
-    return shadow_factor;
-}
-
-float4 RenderMengerSponge3D_OriginalLogic(float2 uv_coords,
-                                          float3 camPos, float3 camDirX, float3 camDirY, float3 camDirZ,
-                                          float menger_size_param, int iterations_param,
-                                          float hit_thresh_param, float max_dist_param, int max_steps_param,
-                                          float3 global_fractal_color, float3 global_bg_color)
-{
-    float3 ro = camPos;
-    float3 rd = normalize(uv_coords.x * camDirX + uv_coords.y * camDirY + camDirZ);
-
-    // El initial_dist_thresh_for_map en map_Menger_Original se usaba para inicializar 'd' en getInnerMenger.
-    // Options3D.z (hit_thresh_param) es un buen candidato para esto.
-    float4 raymarch_result = rayMarch_Menger_Original(ro, rd, menger_size_param, iterations_param, hit_thresh_param, max_dist_param, max_steps_param, hit_thresh_param);
-    
-    float3 bg_final_color = lerp(float3(0.9, 0.8, 0.7), global_bg_color, saturate(rd.y * 0.5 + 0.5));
-
-    if (raymarch_result.w >= max_dist_param) // Si la distancia marchada excede max_dist_param
-        return float4(bg_final_color, 1.0);
-
-    float3 p_hit_surface = ro + rd * raymarch_result.w;
-    float3 normal_surface = getNormal_Menger_Original(p_hit_surface, menger_size_param, iterations_param, hit_thresh_param, hit_thresh_param);
-    float3 view_dir_to_surface = normalize(ro - p_hit_surface);
-
-    float3 light_direction = normalize(float3(0.5, 0.8, -0.3)); // Luz direccional fija como en el original
-    float diffuse_lighting = saturate(dot(normal_surface, light_direction));
-    float ambient_lighting = 0.2;
-
-    float3 halfway_vector = normalize(light_direction + view_dir_to_surface);
-    float spec_angle = saturate(dot(normal_surface, halfway_vector));
-    float specular_lighting = pow(spec_angle, 16.0); // Menger usaba 16 en tu código anterior
-
-    float fresnel_power_val = 5.0;
-    float fresnel_effect = pow(1.0 - saturate(dot(normal_surface, view_dir_to_surface)), fresnel_power_val);
-
-    float shadow_val = calculateShadow_Menger_Original(p_hit_surface, light_direction, menger_size_param, iterations_param, hit_thresh_param, max_dist_param / 2.0, max_steps_param / 2);
-
-    float3 base_color_fractal = global_fractal_color; // Usar el color global
-    float3 specular_highlight_color = float3(1.0, 1.0, 1.0);
-    float3 fresnel_rim_color = float3(1.0, 0.9, 0.8);
-
-    float3 lit_surface_color = base_color_fractal * (diffuse_lighting * shadow_val + ambient_lighting) + specular_lighting * specular_highlight_color * shadow_val;
-    float3 final_pixel_color = lerp(lit_surface_color, fresnel_rim_color, fresnel_effect * 0.6);
-
-    return float4(saturate(final_pixel_color), 1.0);
-}
-
-
-// --- FUNCION PRINCIPAL DE RENDERIZADO (COMÚN) ---
-float4 RenderFractal(float2 uv, int activeFractalType)
-{
-    if (activeFractalType == 1) // Menger Sponge (Lógica Original)
-    {
-        return RenderMengerSponge3D_OriginalLogic(uv,
-                                                  CameraPos.xyz, CameraDirX.xyz, CameraDirY.xyz, CameraDirZ.xyz,
-                                                  ZoomOffset.x, // menger_size
-                                                  maxiter, // iterations
-                                                  Options3D.z, // hit_thresh
-                                                  Options3D.y, // max_dist
-                                                  (int) Options3D.x, // max_steps
-                                                  FractalColor.xyz, BackgroundColor.xyz);
-    }
-    else // Mandelbulb (Nueva Lógica con Path Tracing)
-    {
-        float time = TimeAndResolution.x;
-        float3 ro = CameraPos.xyz;
-        // Si Mandelbulb usa ZoomOffset.x como distancia de cámara:
-        // ro += CameraDirZ.xyz * ZoomOffset.x; // Descomentar si es necesario para Mandelbulb
-
-        float3 rd = normalize(uv.x * CameraDirX.xyz + uv.y * CameraDirY.xyz + CameraDirZ.xyz);
-
-        int maxStepsPrimary = int(Options3D.x);
-        float maxDistScene = Options3D.y;
-        float hitThreshold = Options3D.z;
-        float actualNormalEpsilon = hitThreshold * normalEpsilonScale;
-
-        float mandelbulbAnimPower = lerp(FractalParams1.y, 11.0, sin(time * AnimationParams.x * 0.4) * 0.5 + 0.5);
-        
-        float3 sceneLightPos = LightPositionAndRadius.xyz;
-        float sceneLightRadius = LightPositionAndRadius.w;
-        float3 sceneLightEmissive = LightColorAndIntensity.rgb * LightColorAndIntensity.a;
-
-        float3 accumulatedColor = float3(0, 0, 0);
-        float pathThroughput = 1.0;
-        float3 currentRayOrigin = ro;
-        float3 currentRayDirection = rd;
-        const int MAX_BOUNCES = 2;
-
-        for (int bounce = 0; bounce <= MAX_BOUNCES; ++bounce)
-        {
-            RayHitResult_PathTraced hit = castRay_PathTraced(currentRayOrigin, currentRayDirection,
-                                               mandelbulbAnimPower,
-                                               sceneLightPos, sceneLightRadius,
-                                               (bounce == 0) ? maxStepsPrimary : maxStepsPrimary / (bounce + 2),
-                                               maxDistScene, hitThreshold, actualNormalEpsilon);
-
-            if (!hit.isHit)
+            result.isHit = true;
+            result.hitPos = p_world - rd * (max(distToScene_world, 0.0f) - thresh * 0.5f);
+            result.distance = totalDist - (max(distToScene_world, 0.0f) - thresh * 0.5f);
+            
+            if (distToLight_world < distToFractal_world)
             {
-                accumulatedColor += pathThroughput * GetBackgroundColorFromRay_PathTraced(currentRayDirection);
-                break;
-            }
-            if (hit.objectType == 2)
-            {
-                accumulatedColor += pathThroughput * sceneLightEmissive * directLightBrightness;
-                break;
-            }
-
-            float3 V = normalize(currentRayOrigin - hit.hitPos);
-            float3 hitBaseColor = hit.baseColorIfFractal;
-            float3 directIllumContribution;
-            if (bounce == 0)
-            {
-                float3 pointLightDir = normalize(sceneLightPos - hit.hitPos);
-                float diffuse = saturate(dot(hit.normal, pointLightDir));
-                float specPower = 32.0;
-                float3 halfwayDir = normalize(pointLightDir + V);
-                float specAngle = saturate(dot(hit.normal, halfwayDir));
-                float specular = pow(specAngle, specPower);
-                float ao = calculateAO_PathTraced(hit.hitPos, hit.normal, mandelbulbAnimPower, hitThreshold, actualNormalEpsilon);
-                float distToLightSq = dot(sceneLightPos - hit.hitPos, sceneLightPos - hit.hitPos);
-                float attenuation = 1.0 / (1.0 + 0.05 * sqrt(distToLightSq) + 0.02 * distToLightSq);
-                directIllumContribution = (hitBaseColor * diffuse * directLightBrightness + float3(1, 1, 1) * specular * directLightBrightness * 0.8) * ao * sceneLightEmissive * attenuation +
-                                          hitBaseColor * ambientLightBrightness * ao;
+                result.objectType = 2;
+                result.normal = normalize(result.hitPos - lightPos);
             }
             else
             {
-                directIllumContribution = getPointDirectIllumination_PathTraced(hit.hitPos, hit.normal, V, hitBaseColor, sceneLightPos, sceneLightEmissive);
+                result.objectType = 1;
+                result.normal = getNormal_Menger_Original(result.hitPos, mengerSize, mengerIterations, normal_epsilon_world, initial_dist_thresh_param);
             }
-
-            if (bounce == MAX_BOUNCES)
-            {
-                accumulatedColor += pathThroughput * directIllumContribution;
-                break;
-            }
-            
-            float NdotV = saturate(dot(hit.normal, V));
-            float fresnel = pow(1.0 - NdotV, fresnelStrength);
-            float reflectivity = reflectivityFactor * fresnel;
-
-            accumulatedColor += pathThroughput * directIllumContribution * (1.0 - reflectivity);
-            pathThroughput *= reflectivity * hitBaseColor;
-            
-            if (dot(pathThroughput, pathThroughput) < 0.001)
-                break;
-
-            currentRayOrigin = hit.hitPos + hit.normal * hitThreshold * 1.5f; // Mover un poco fuera por la normal
-            currentRayDirection = reflect(currentRayDirection, hit.normal);
+            break;
         }
-        return float4(saturate(accumulatedColor), 1.0);
+        if (totalDist > maxDist)
+            break;
     }
+    return result;
+}
+
+float calculateAO_Menger_PT(float3 pos_world, float3 normal_world,
+                            float mengerSize, int mengerIterations,
+                            float thresh,
+                            float actual_normal_epsilon_param,
+                            float ao_strength_mult, float direct_light_brightness_for_ao_radius)
+{
+    float occlusion = 0.0;
+    const int aoSamples = 5;
+    const float aoRadius = 0.4 * direct_light_brightness_for_ao_radius;
+    const float aoMaxDistStep = aoRadius / 3.0f;
+    const float MIN_AO_STEP_FACTOR = 0.1f;
+
+    float initial_dist_thresh_param_ao = mengerSize;
+
+    for (int i = 0; i < aoSamples; ++i)
+    {
+        float3 randomVec = float3(rand_PathTraced(pos_world.xy + float(i)) - 0.5, rand_PathTraced(pos_world.yz + float(i)) - 0.5, rand_PathTraced(pos_world.zx + float(i)) - 0.5);
+        float3 sampleDir = normalize(normal_world + randomVec * 0.8f);
+        if (dot(sampleDir, normal_world) < 0.1)
+            sampleDir = normal_world;
+
+        float totalSampleDist = actual_normal_epsilon_param * 2.0f; 
+        for (int j = 0; j < 5; ++j)
+        {
+            float3 pSample_world = pos_world + sampleDir * totalSampleDist;
+            float dFractal_world = map_Menger_Original(pSample_world, mengerSize, mengerIterations, initial_dist_thresh_param_ao).w;
+            
+            if (dFractal_world < thresh * 0.5f)
+            {
+                occlusion += (1.0 - smoothstep(0.0, aoRadius, totalSampleDist));
+                break;
+            }
+            
+            float step_dist_ao = max(dFractal_world, thresh * MIN_AO_STEP_FACTOR);
+            totalSampleDist += min(step_dist_ao, aoMaxDistStep);
+            if (totalSampleDist > aoRadius)
+                break;
+        }
+    }
+    return saturate(1.0 - (occlusion / float(aoSamples)) * ao_strength_mult);
+}
+
+// --- FUNCION PRINCIPAL DE RENDERIZADO ---
+float4 RenderFractal(float2 uv, int activeFractalType)
+{
+    float time = TimeAndResolution.x;
+    float3 ro = CameraPos.xyz;
+    float3 rd = normalize(uv.x * CameraDirX.xyz + uv.y * CameraDirY.xyz + CameraDirZ.xyz);
+
+    int maxStepsPrimary = int(Options3D.x);
+    float maxDistScene = Options3D.y;
+    float hitThreshold = Options3D.z;
+    float actualNormalEpsilon = max(hitThreshold * normalEpsilonScale, 0.00001f);
+
+    float3 sceneLightPos = LightPositionAndRadius.xyz;
+    float sceneLightRadius = LightPositionAndRadius.w;
+    float3 sceneLightEmissive = LightColorAndIntensity.rgb * LightColorAndIntensity.a;
+
+    float3 accumulatedColor = float3(0, 0, 0);
+    float pathThroughput = 1.0;
+    float3 currentRayOrigin = ro;
+    float3 currentRayDirection = rd;
+    const int MAX_BOUNCES = BOUNCESMAX;
+
+    float menger_size_param = ZoomOffset.x;
+    int menger_iterations_param = maxiter;
+    
+    float mandelbulbAnimPower = lerp(FractalParams1.y, 11.0, sin(time * AnimationParams.x * 0.4) * 0.5 + 0.5);
+
+    for (int bounce = 0; bounce <= MAX_BOUNCES; ++bounce)
+    {
+        RayHitResult_PathTraced hit;
+        int currentMaxSteps = (bounce == 0) ? maxStepsPrimary : max(32, maxStepsPrimary / (bounce + 2));
+
+        if (activeFractalType == 1) // Menger Sponge con Path Tracing
+        {
+            hit = castRay_Menger_PT(currentRayOrigin, currentRayDirection,
+                                    menger_size_param, menger_iterations_param,
+                                    sceneLightPos, sceneLightRadius,
+                                    currentMaxSteps, maxDistScene, hitThreshold, actualNormalEpsilon);
+        }
+        else // Mandelbulb con Path Tracing
+        {
+            hit = castRay_Mandelbulb_PT(currentRayOrigin, currentRayDirection,
+                                       mandelbulbAnimPower,
+                                       sceneLightPos, sceneLightRadius,
+                                       currentMaxSteps, maxDistScene, hitThreshold, actualNormalEpsilon);
+        }
+
+        if (!hit.isHit)
+        {
+            accumulatedColor += pathThroughput * GetBackgroundColorFromRay_PathTraced(currentRayDirection);
+            break;
+        }
+
+        if (hit.objectType == 2)
+        {
+            accumulatedColor += pathThroughput * sceneLightEmissive * directLightBrightness;
+            break;
+        }
+
+        float3 V = normalize(currentRayOrigin - hit.hitPos);
+        float3 hitBaseColor = hit.baseColorIfFractal;
+        float3 directIllumContribution = float3(0, 0, 0);
+        float ao = 1.0;
+
+        if (bounce == 0)
+        {
+            if (activeFractalType == 1)
+            {
+                ao = calculateAO_Menger_PT(hit.hitPos, hit.normal,
+                                           menger_size_param, menger_iterations_param,
+                                           hitThreshold, actualNormalEpsilon,
+                                           aoStrengthMultiplier, directLightBrightness);
+            }
+            else
+            {
+                ao = calculateAO_Mandelbulb_PT(hit.hitPos, hit.normal, mandelbulbAnimPower, hitThreshold, actualNormalEpsilon);
+            }
+
+            float3 pointLightDir = normalize(sceneLightPos - hit.hitPos);
+            float diffuse = saturate(dot(hit.normal, pointLightDir));
+            
+            float shadow = 1.0;
+            RayHitResult_PathTraced shadowHit;
+            float distToLightSource = length(sceneLightPos - hit.hitPos);
+            
+            float3 shadowRayOrigin = hit.hitPos + hit.normal * actualNormalEpsilon * 2.0f;
+
+            if (distToLightSource > actualNormalEpsilon * 3.0f)
+            {
+                int shadowMaxSteps = max(16, currentMaxSteps / 10);
+                if (activeFractalType == 1)
+                {
+                    shadowHit = castRay_Menger_PT(
+                        shadowRayOrigin, pointLightDir,
+                        menger_size_param, menger_iterations_param,
+                        sceneLightPos, 0.001f,
+                        shadowMaxSteps, distToLightSource - actualNormalEpsilon * 2.5f,
+                        hitThreshold, actualNormalEpsilon
+                    );
+                }
+                else
+                {
+                    shadowHit = castRay_Mandelbulb_PT(
+                        shadowRayOrigin, pointLightDir,
+                        mandelbulbAnimPower,
+                        sceneLightPos, 0.001f,
+                        shadowMaxSteps, distToLightSource - actualNormalEpsilon * 2.5f,
+                        hitThreshold, actualNormalEpsilon
+                    );
+                }
+                if (shadowHit.isHit && shadowHit.distance < distToLightSource && shadowHit.objectType == 1)
+                {
+                    shadow = 0.10;
+                }
+            }
+
+            float specPower = 32.0;
+            float3 halfwayDir = normalize(pointLightDir + V);
+            float specAngle = saturate(dot(hit.normal, halfwayDir));
+            float specular = pow(specAngle, specPower);
+            
+            float distToLightSq = dot(sceneLightPos - hit.hitPos, sceneLightPos - hit.hitPos);
+            float attenuation = 1.0 / (1.0 + 0.05 * sqrt(distToLightSq) + 0.02 * distToLightSq);
+            
+            directIllumContribution = (hitBaseColor * diffuse * directLightBrightness * shadow +
+                                       float3(1, 1, 1) * specular * directLightBrightness * 0.8 * shadow) * ao * sceneLightEmissive * attenuation +
+                                      hitBaseColor * ambientLightBrightness * ao;
+        }
+        else
+        {
+            directIllumContribution = hitBaseColor * ambientLightBrightness * 0.5f;
+        }
+
+
+        if (bounce == MAX_BOUNCES)
+        {
+            accumulatedColor += pathThroughput * directIllumContribution;
+            break;
+        }
+        
+        float NdotV = saturate(dot(hit.normal, V));
+        float fresnel = pow(1.0 - NdotV, fresnelStrength);
+        float reflectivity = reflectivityFactor * fresnel;
+
+        accumulatedColor += pathThroughput * directIllumContribution * (1.0 - reflectivity);
+        pathThroughput *= reflectivity * hitBaseColor;
+        
+        if (dot(pathThroughput, pathThroughput) < 0.001) 
+            break;
+
+        currentRayOrigin = hit.hitPos + hit.normal * actualNormalEpsilon * 1.5f;
+        currentRayDirection = reflect(currentRayDirection, hit.normal);
+    }
+    return float4(saturate(accumulatedColor), 1.0);
 }
 
 

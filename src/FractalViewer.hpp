@@ -59,14 +59,14 @@ namespace Diligent
             float4 LightPositionAndRadius; // xyz=pos, w=radius
             float4 LightColorAndIntensity; // rgb=color, a=intensity
 
-            // Nuevos parámetros para ajuste fino
             float aoStrengthMultiplier;
             float directLightBrightness;
             float ambientLightBrightness;
-            float reflectivityFactor; // Multiplica la reflectividad calculada por Fresnel
+            float reflectivityFactor;
             float fresnelStrength; // Potencia del exponente Fresnel
             float normalEpsilonScale; // Escala para el epsilon de cálculo de normales (ej. 0.5)
-			float2 textureScale; // Escala de textura UV (x=scaleX, y=scaleY)
+            int bounces; // Escala de textura UV (x=scaleX, y=scaleY)
+            float padding;
         };
 
         RenderMode m_RenderMode = RenderMode::PixelShader;
@@ -110,11 +110,12 @@ namespace Diligent
         float m_reflectivityFactor = 0.7f;
         float m_fresnelStrength = 4.0f;
         float m_normalEpsilonScale = 0.5f;
-		float2 m_textureScale = float2{ 1.0f, 1.0f }; // Escala de textura UV (x=scaleX, y=scaleY)
+		float2 m_textureScale = float2{ 1.0f, 1.0f };
         float3 m_LightPosition = { -2.0f, 2.0f, -3.0f };
         float            m_LightRadius = 0.2f;
-        float3  m_LightColor = { 1.0f, 1.0f, 0.8f }; // Usar Diligent::Color o Diligent::float3
+        float3  m_LightColor = { 1.0f, 1.0f, 0.8f };
         float            m_LightIntensity = 20.0f;
+        int m_bounces = 2.0f;
 
         // Cámara extras
         float m_CameraYaw = 0.0f;

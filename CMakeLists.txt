@@ -4,7 +4,7 @@ project(MiProyectoFractal)
 add_definitions(-DPLATFORM_WIN32)
 
 # Ruta al DiligentEngine que ya tienes descargado
-set(DILIGENT_ROOT "C:/Users/carlo/Desktop/DiligentEngine")
+set(DILIGENT_ROOT "D:/DiligentEngine")
 
 # Para evitar warnings innecesarios
 set(CMAKE_CXX_STANDARD 17)

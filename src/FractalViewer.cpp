@@ -98,7 +98,7 @@ namespace Diligent
         ShaderCI.HLSLVersion = { 6, 3 };
         ShaderCI.Desc.UseCombinedTextureSamplers = true;
         ShaderCI.CompileFlags = SHADER_COMPILE_FLAG_PACK_MATRIX_ROW_MAJOR;
-        ShaderCI.pShaderSourceStreamFactory = m_pShaderSourceFactory; // ya creado
+        ShaderCI.pShaderSourceStreamFactory = m_pShaderSourceFactory; 
 
         RefCntAutoPtr<IShader> pCS;
         {
@@ -120,7 +120,6 @@ namespace Diligent
         // 3. Asignar el compute shader al PSO
         PSOCreateInfo.pCS = pCS;
 
-        // 4. Layout de recursos (same as graphics, si usas mismo CBuffer/UAV/SRV)
         PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType =
             SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
@@ -361,8 +360,7 @@ namespace Diligent
             CBufferData.reflectivityFactor = m_reflectivityFactor;
             CBufferData.fresnelStrength = m_fresnelStrength;
             CBufferData.normalEpsilonScale = m_normalEpsilonScale;
-
-            CBufferData.textureScale = Diligent::float2{ 1.0f, 1.0f };
+            CBufferData.bounces = m_bounces;
 		}
 
         {
@@ -395,7 +393,6 @@ namespace Diligent
             m_pImmediateContext->SetPipelineState(m_pComputePSO);
             m_pImmediateContext->CommitShaderResources(m_pComputeSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-            // Dispatch: agrupa tus hilos (aquí 16×16)
             const auto& SCDesc = m_pSwapChain->GetDesc();
             Uint32 wgX = (SCDesc.Width + 15) / 16;
             Uint32 wgY = (SCDesc.Height + 15) / 16;
@@ -417,9 +414,7 @@ namespace Diligent
 
             m_pImmediateContext->TransitionResourceStates(1, &Barrier);
 
-            // ——— 2) Dibujar fullscreen-quad con la textura resultante ———
             m_pImmediateContext->SetPipelineState(m_pQuadPSO);
-            // Quad SRB debería tener el SRV de la textura:
             m_pQuadSRB->GetVariableByName(SHADER_TYPE_PIXEL, "InputTex")
                 ->Set(m_pComputeOutputTex->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE));
             m_pImmediateContext->CommitShaderResources(m_pQuadSRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -587,7 +582,7 @@ namespace Diligent
                 ImGui::SliderFloat("Reflectivity Factor", &m_reflectivityFactor, 0.0f, 1.0f);
                 ImGui::SliderFloat("Fresnel Strength", &m_fresnelStrength, 1.0f, 10.0f);
                 ImGui::SliderFloat("Normal Epsilon Scale", &m_normalEpsilonScale, 0.01f, 2.0f);
-				ImGui::SliderFloat2("Texture Scale (UV)", &m_textureScale.x, 0.1f, 10.0f, "%.2f");
+                ImGui::SliderInt("Max number of bounces", &m_bounces, 0, 10 );
             }
             
             // --- Flags de render ---
@@ -622,26 +617,20 @@ namespace Diligent
     {
         SampleBase::WindowResize(Width, Height);
 
-        if (m_usesComputePipeline && m_pDevice) // Añadir chequeo de m_pDevice por si acaso
+        if (m_usesComputePipeline && m_pDevice)
         {
             const auto& SCDesc = m_pSwapChain->GetDesc();
 
-            // Si m_pComputeOutputTex no existe, o si las dimensiones cambiaron
-            if (!m_pComputeOutputTex || // Si es la primera vez o se liberó
+            if (!m_pComputeOutputTex || 
                 m_pComputeOutputTex->GetDesc().Width != SCDesc.Width ||
                 m_pComputeOutputTex->GetDesc().Height != SCDesc.Height)
             {
                 LOG_INFO_MESSAGE("Resizing compute output texture to ", SCDesc.Width, "x", SCDesc.Height);
 
-                // Paso 1: Liberar explícitamente la referencia al objeto antiguo.
-                // Esto decrementará el contador de referencias. Si llega a cero, el objeto se destruirá.
-                // Si había otras referencias, el objeto seguirá vivo, pero este RefCntAutoPtr ya no lo apuntará.
-                if (m_pComputeOutputTex) // Solo si realmente apunta a algo
+                if (m_pComputeOutputTex) 
                 {
-                    m_pComputeOutputTex.Release(); // O m_pComputeOutputTex = nullptr;
+                    m_pComputeOutputTex.Release(); 
                 }
-                // Ahora m_pComputeOutputTex es efectivamente un puntero nulo o está "vacío"
-                // y listo para recibir un nuevo objeto.
 
                 TextureDesc TexDesc;
                 TexDesc.Name = "Compute Output Texture";
@@ -652,10 +641,8 @@ namespace Diligent
                 TexDesc.Usage = USAGE_DEFAULT;
                 TexDesc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS;
 
-                // Paso 2: Crear la nueva textura. Ahora CreateTexture no debería quejarse.
                 m_pDevice->CreateTexture(TexDesc, nullptr, &m_pComputeOutputTex);
 
-                // Paso 3: Re-enlazar la nueva vista UAV al SRB del compute shader
                 if (m_pComputeSRB && m_pComputeOutputTex)
                 {
                     m_pComputeSRB->GetVariableByName(SHADER_TYPE_COMPUTE, "OutputTex")
